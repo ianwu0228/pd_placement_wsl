@@ -176,9 +176,12 @@ class ObjectiveFunction : public BaseFunction {
         Wirelength wirelength_;
         Density density_;
         double lambda_;
-        std::vector<Point2<double>> grad_;  // Combined gradient cache
+        // std::vector<Point2<double>> grad_;  // Combined gradient cache
         std::vector<Point2<double>> input_;            // Cached module positions
-
+    
 };
+
+
+
 
 #endif  // OBJECTIVEFUNCTION_H

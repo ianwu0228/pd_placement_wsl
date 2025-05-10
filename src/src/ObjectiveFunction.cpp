@@ -155,6 +155,7 @@ const std::vector<Point2<double>> &Wirelength::Backward() {
         computeGrad(x, true);  // x-direction
         computeGrad(y, false); // y-direction
     }
+    // cout << "Wirelength grad for module 0: " << grad_[0].x << ", " << grad_[0].y << std::endl;
 
     return grad_;
 }
@@ -231,8 +232,8 @@ const double &Density::operator()(const std::vector<Point2<double>> &input) {
     for (int by = 0; by < bin_rows_; ++by) {
         for (int bx = 0; bx < bin_cols_; ++bx) {
             double overflow = bin_density_[by][bx] - bin_capacity_;
-            if (overflow > 0.0)
-                value_ += overflow * overflow;  // Quadratic penalty
+            // if (overflow > 0.0)
+            value_ += overflow * overflow;  // Quadratic penalty
         }
     }
 
@@ -294,60 +295,39 @@ const std::vector<Point2<double>> &Density::Backward() {
 
 
 
-// ObjectiveFunction::ObjectiveFunction(Placement &placement, double lambda)
-//     : BaseFunction(placement.numModules()),
-//       wirelength_(placement, /*gamma=*/5000.0),  // set γ as needed
-//       density_(placement),                       // default: 50×50 grid
-//       lambda_(lambda),
-//       grad_(placement.numModules(), Point2<double>(0.0, 0.0)) {}
-
-// const double &ObjectiveFunction::operator()(const std::vector<Point2<double>> &input) {
-//     const double wl = wirelength_(input);
-//     const double dp = density_(input);
-//     value_ = wl + lambda_ * dp;
-//     return value_;
-// }
-
-
-// const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
-//     const std::vector<Point2<double>> &grad_wl = wirelength_.Backward();
-//     const std::vector<Point2<double>> &grad_dp = density_.Backward();
-
-//     for (size_t i = 0; i < grad_.size(); ++i) {
-//         grad_[i].x = grad_wl[i].x + lambda_ * grad_dp[i].x;
-//         grad_[i].y = grad_wl[i].y + lambda_ * grad_dp[i].y;
-//     }
-
-//     return grad_;
-// }
-
-
 ObjectiveFunction::ObjectiveFunction(Placement &placement, double lambda)
     : BaseFunction(placement.numModules()),
-      wirelength_(placement, /*gamma=*/5000.0),  // unused in dummy
-      density_(placement),                       // unused in dummy
-      lambda_(lambda),
-      grad_(placement.numModules(), Point2<double>(0.0, 0.0)) {}
+      wirelength_(placement, /*gamma=*/5000.0),  // set γ as needed
+      density_(placement),                       // default: 50×50 grid
+      lambda_(lambda)/*,
+      grad_(placement.numModules(), Point2<double>(0.0, 0.0))*/ {}
 
 const double &ObjectiveFunction::operator()(const std::vector<Point2<double>> &input) {
-    input_ = input;  // ← Add this at the start of operator()
-
-    value_ = 0.0;
-    for (const auto &p : input) {
-        value_ += (p.x * p.x + p.y * p.y);            // dummy "wirelength"
-        value_ += lambda_ * (p.x + p.y);              // dummy "density penalty"
-    }
-    value_ = 1.0;  // dummy constant offset
+    input_ = input;                     // cache for Backward()
+    wirelength_(input);                // ensure internal input_ is set
+    density_(input);                   // ensure internal input_ is set
+    const double wl = wirelength_.value();
+    const double dp = density_.value();
+    cout << "wl: " << wl << ", dp: " << dp << std::endl;
+    value_ = wl + lambda_ * dp;
     return value_;
 }
 
+
+
 const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
+    const std::vector<Point2<double>> &grad_wl = wirelength_.Backward();
+    const std::vector<Point2<double>> &grad_dp = density_.Backward();
+
     for (size_t i = 0; i < grad_.size(); ++i) {
-        grad_[i].x = 1.5;  // dummy gradient
-        grad_[i].y = 1;  // dummy gradient
+        grad_[i].x = grad_wl[i].x + lambda_ * grad_dp[i].x;
+        grad_[i].y = grad_wl[i].y + lambda_ * grad_dp[i].y;
+        // cout << "grad_[" << i << "]: " << grad_[i].x << ", " << grad_[i].y << std::endl;
     }
+
     return grad_;
 }
+
 
 
 

@@ -25,6 +25,7 @@ void SimpleConjugateGradient::Step() {
     // Compute the gradient direction
     obj_(var_);       // Forward, compute the function value and cache from the input
     obj_.Backward();  // Backward, compute the gradient according to the cache
+    // cout << "obj value: " << obj_.value() << endl; 
 
     // Compute the Polak-Ribiere coefficient and conjugate directions
     double beta;                                  // Polak-Ribiere coefficient
@@ -56,6 +57,8 @@ void SimpleConjugateGradient::Step() {
 
         for (size_t i = 0; i < kNumModule; ++i) {
             dir[i] = -obj_.grad().at(i) + beta * dir_prev_.at(i);
+            // cout << "onj_.grad().at(i) (x, y) = " << obj_.grad().at(i).x <<  obj_.grad().at(i).y << endl;
+            // cout << "dir[" << i << "], dir.x =  " << dir[i].x << "dir.y = " << dir[i].y << endl; 
         }
     }
 
@@ -65,7 +68,12 @@ void SimpleConjugateGradient::Step() {
     // Update the solution
     // Please be aware of the updating directions, i.e., the sign for each term.
     for (size_t i = 0; i < kNumModule; ++i) {
-        var_[i] = var_[i] + alpha_ * dir[i];
+        Point2<double> ori = var_[i]; // Store the current position
+        var_[i] = var_[i] + alpha_ * dir[i]; //supports operator overloading, updates x and y at the same time
+        Point2<double> new_pos = var_[i]; // Store the new position
+        // cout << "dir[i]: " << dir[i].x << ", " << dir[i].y << endl;
+        // cout << "Module " << i << ": (" << ori.x << ", " << ori.y << ") -> ("
+        //      << new_pos.x << ", " << new_pos.y << ")" << endl;
     }
 
     // Update the cache data members

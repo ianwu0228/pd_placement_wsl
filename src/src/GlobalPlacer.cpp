@@ -26,27 +26,37 @@ void GlobalPlacer::place() {
     for (size_t i = 0; i < num_modules; ++i) {
         if (_placement.module(i).isFixed()) continue;
         t[i] = Point2<double>(_placement.module(i).centerX(), _placement.module(i).centerY());
-        cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
+        // cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
     }
 
    
     // ExampleFunction foo(_placement);                    // Objective function
-    ObjectiveFunction obj(_placement, /*lambda=*/1000.0);
+    ObjectiveFunction obj(_placement, /*lambda=*/0.0001);
 
-    const double kAlpha = 0.01;                         // Constant step size
+    const double kAlpha = 10;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
 
     // Set initial point
-    t[0] = 4.;  // This set both t[0].x and t[0].y to 4.
+    // t[0] = 4.;  // This set both t[0].x and t[0].y to 4.
 
     // Initialize the optimizer
     optimizer.Initialize();
 
+    Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
+    Density density_(_placement, /*bin_rows=*/50, /*bin_cols=*/50, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
     // Perform optimization, the termination condition is that the number of iterations reaches 100
     // TODO: You may need to change the termination condition, which is determined by the overflow ratio.
-    for (size_t i = 0; i < 100; ++i) {
+    for (size_t i = 0; i < 500; ++i) {
         optimizer.Step();
-        printf("iter = %3lu, f = %9.4f, x = %9.4f, y = %9.4f\n", i, obj(t), t[0].x, t[0].y);
+        // printf("iter = %3lu, f = %9.4f, x = %9.4f, y = %9.4f\n", i, obj(t), t[0].x, t[0].y);
+        printf("iter = %3lu, objective function value = %9.4f\n", i, obj(t));
+        for (size_t j = 0; j < t.size(); ++j) {
+            if (_placement.module(j).isFixed()) continue;
+            // printf("iter %2lu, module %2zu: pos = (%.2f, %.2f)\n", i, j, t[i].x, t[i].y);
+        }
+
+        // printf("iter %3lu: value = %.2f, WL = %.2f, DP = %.2f\n", i, obj(t), wirelength_(t), density_(t));
+
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -68,10 +78,10 @@ void GlobalPlacer::place() {
             fixed_cnt++;
             continue;
         }
-        // _placement.module(i).setPosition(t[i].x, t[i].y);
-        _placement.module(i).setPosition(0, 0);
+        _placement.module(i).setPosition(t[i].x, t[i].y);
+        // _placement.module(i).setPosition(10, 10);
 
-        cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
+        cout << _placement.module(i).name() << " (" << _placement.module(i).centerX() << ", " << _placement.module(i).centerY() << ")" << endl;
     }
     printf("INFO: %lu / %lu modules are fixed.\n", fixed_cnt, num_modules);
 }
