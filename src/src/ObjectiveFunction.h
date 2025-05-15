@@ -77,16 +77,7 @@ class ExampleFunction : public BaseFunction {
 /**
  * @brief Wirelength function
  */
-// class Wirelength : public BaseFunction {
-//     // TODO: Implement the wirelength function, add necessary data members for caching
-//    public:
-//     /////////////////////////////////
-//     // Methods
-//     /////////////////////////////////
 
-//     const double &operator()(const std::vector<Point2<double>> &input) override;
-//     const std::vector<Point2<double>> &Backward() override;
-// };
 class Wirelength : public BaseFunction {
     public:
         Wirelength(Placement &placement, double gamma);
@@ -104,64 +95,69 @@ class Wirelength : public BaseFunction {
 /**
  * @brief Density function
  */
-// class Density : public BaseFunction {
-//     // TODO: Implement the density function, add necessary data members for caching
-//    public:
-//     /////////////////////////////////
-//     // Methods
-//     /////////////////////////////////
 
-//     const double &operator()(const std::vector<Point2<double>> &input) override;
-//     const std::vector<Point2<double>> &Backward() override;
+
+// class Density : public BaseFunction {
+//     public:
+//         Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double sigma_factor = 1.5, double target_density = 0.9);
+
+//         const double &operator()(const std::vector<Point2<double>> &input) override;
+//         const std::vector<Point2<double>> &Backward() override;
+//         const double getBinCapacity() const { return bin_capacity_; }
+//         const std::vector<std::vector<double>> &getBinDensity() const { return bin_density_; }
+//     private:
+//         Placement &placement_;
+
+//         int bin_rows_, bin_cols_;
+//         double chip_left_, chip_right_, chip_top_, chip_bottom_;
+//         double bin_width_, bin_height_;
+//         double sigma_, sigma_sq_; // Gaussian smoothing σ and σ²
+//         double target_density_;
+//         double bin_capacity_;
+
+//         std::vector<std::vector<double>> bin_density_; // Smoothed density per bin
+//         std::vector<Point2<double>> input_;            // Cached module positions
 // };
 
 class Density : public BaseFunction {
     public:
-        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double sigma_factor = 1.5, double target_density = 0.9);
+        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double alpha = 2.0, double target_density = 0.9);
 
+
+        
         const double &operator()(const std::vector<Point2<double>> &input) override;
         const std::vector<Point2<double>> &Backward() override;
+
         const double getBinCapacity() const { return bin_capacity_; }
         const std::vector<std::vector<double>> &getBinDensity() const { return bin_density_; }
+
+        // Optional: expose smoothing trigger
+        void smoothBinDensityLevel(int smoothing_pass = 1);
+
     private:
         Placement &placement_;
 
         int bin_rows_, bin_cols_;
         double chip_left_, chip_right_, chip_top_, chip_bottom_;
         double bin_width_, bin_height_;
-        double sigma_, sigma_sq_; // Gaussian smoothing σ and σ²
+        double alpha_;                  // Alpha for sigmoid steepness
         double target_density_;
         double bin_capacity_;
 
         std::vector<std::vector<double>> bin_density_; // Smoothed density per bin
         std::vector<Point2<double>> input_;            // Cached module positions
+
+        // Sigmoid function used for smoothing density influence
+        double sigmoid(double d, double lower, double upper) const;
 };
+
 
 
 
 /**
  * @brief Objective function for global placement
  */
-// class ObjectiveFunction : public BaseFunction {
-//     // TODO: Implement the objective function for global placement, add necessary data
-//     // members for caching
-//     //
-//     // Hint: The objetive function of global placement is as follows:
-//     //       f(t) = wirelength(t) + lambda * density(t),
-//     // where t is the positions of the modules, and lambda is the penalty weight.
-//     // You may need an interface to update the penalty weight (lambda) dynamically.
-//    public:
-//     /////////////////////////////////
-//     // Methods
-//     /////////////////////////////////
 
-//     const double &operator()(const std::vector<Point2<double>> &input) override;
-//     const std::vector<Point2<double>> &Backward() override;
-
-//    private:
-//     Wirelength wirelength_;
-//     Density density_;
-// };
 
 class ObjectiveFunction : public BaseFunction {
     public:

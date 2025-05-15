@@ -22,19 +22,41 @@ void GlobalPlacer::place() {
     // If you use other methods, you can skip and delete it directly.
     ////////////////////////////////////////////////////////////////////
     // std::vector<Point2<double>> t(1);                   // Optimization variables (in this example, there is only one t)
+    // const size_t num_modules = _placement.numModules();
+
     const size_t num_modules = _placement.numModules();
     std::vector<Point2<double>> t(num_modules);
+
+    // Initialize random number generator once outside the loop
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    // Create small random offsets (±5% of chip size around center)
+    double offset_x = _placement.boundryRight() * 0.05;  // 5% of chip width
+    double offset_y = _placement.boundryTop() * 0.05;    // 5% of chip height
+    std::uniform_real_distribution<> dis_x(-offset_x, offset_x);
+    std::uniform_real_distribution<> dis_y(-offset_y, offset_y);
+
+    // Center coordinates
+    double center_x = _placement.boundryRight() / 2;
+    double center_y = _placement.boundryTop() / 2;
+
+    // std::vector<Point2<double>> t(num_modules);
     for (size_t i = 0; i < num_modules; ++i) {
         if (_placement.module(i).isFixed()) continue;
-        // initial position, place all modules at the center of the chip
-        t[i] = Point2<double>(_placement.boundryRight() / 2, _placement.boundryTop() / 2);
-        cout << "initial position: \n";
+        
+        // Add small random offset to center position
+        t[i] = Point2<double>(
+            center_x + dis_x(gen),
+            center_y + dis_y(gen)
+        );
+        
         cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
     }
 
    
     // ExampleFunction foo(_placement);                    // Objective function
-    ObjectiveFunction obj(_placement, /*lambda=*/10000);
+    ObjectiveFunction obj(_placement, /*lambda=*/0);
 
     const double kAlpha = 10;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
@@ -46,7 +68,7 @@ void GlobalPlacer::place() {
     optimizer.Initialize();
 
     Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
-    Density density_(_placement, /*bin_rows=*/200, /*bin_cols=*/200, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
+    Density density_(_placement, /*bin_rows=*/500, /*bin_cols=*/500, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
     // Perform optimization, the termination condition is that the number of iterations reaches 100
     // TODO: You may need to change the termination condition, which is determined by the overflow ratio.
     // for (size_t i = 0; i < 100; ++i) {
@@ -253,3 +275,5 @@ void GlobalPlacer::plotBoxPLT(ofstream &stream, double x1, double y1, double x2,
            << x1 << ", " << y1 << endl
            << endl;
 }
+
+
