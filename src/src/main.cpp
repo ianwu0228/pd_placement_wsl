@@ -80,7 +80,10 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////
     // Global Placement
     ////////////////////////////////////////////////////////////////
-
+    // cout << "left boundary" << placement.boundryLeft() << endl;
+    // cout << "right boundary" << placement.boundryRight() << endl;
+    // cout << "bottom boundary" << placement.boundryBottom() << endl;
+    // cout << "top boundary" << placement.boundryTop() << endl;
     time_t total_time=0;
     time_t global_time_start = time(NULL);
     time_t total_global_time = 0;

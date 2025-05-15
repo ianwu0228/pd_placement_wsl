@@ -116,24 +116,25 @@ class Wirelength : public BaseFunction {
 // };
 
 class Density : public BaseFunction {
-   public:
-    Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double sigma_factor = 1.5, double target_density = 0.9);
+    public:
+        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double sigma_factor = 1.5, double target_density = 0.9);
 
-    const double &operator()(const std::vector<Point2<double>> &input) override;
-    const std::vector<Point2<double>> &Backward() override;
+        const double &operator()(const std::vector<Point2<double>> &input) override;
+        const std::vector<Point2<double>> &Backward() override;
+        const double getBinCapacity() const { return bin_capacity_; }
+        const std::vector<std::vector<double>> &getBinDensity() const { return bin_density_; }
+    private:
+        Placement &placement_;
 
-   private:
-    Placement &placement_;
+        int bin_rows_, bin_cols_;
+        double chip_left_, chip_right_, chip_top_, chip_bottom_;
+        double bin_width_, bin_height_;
+        double sigma_, sigma_sq_; // Gaussian smoothing σ and σ²
+        double target_density_;
+        double bin_capacity_;
 
-    int bin_rows_, bin_cols_;
-    double chip_left_, chip_right_, chip_top_, chip_bottom_;
-    double bin_width_, bin_height_;
-    double sigma_, sigma_sq_; // Gaussian smoothing σ and σ²
-    double target_density_;
-    double bin_capacity_;
-
-    std::vector<std::vector<double>> bin_density_; // Smoothed density per bin
-    std::vector<Point2<double>> input_;            // Cached module positions
+        std::vector<std::vector<double>> bin_density_; // Smoothed density per bin
+        std::vector<Point2<double>> input_;            // Cached module positions
 };
 
 
@@ -171,6 +172,8 @@ class ObjectiveFunction : public BaseFunction {
 
         void setLambda(double lambda);  // Optional: expose dynamic λ adjustment
         double getLambda() const;
+        const Wirelength &getWirelength() const { return wirelength_; }
+        const Density &getDensity() const { return density_; }
 
     private:
         Wirelength wirelength_;

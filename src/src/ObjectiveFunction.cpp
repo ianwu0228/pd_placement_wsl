@@ -232,6 +232,7 @@ const double &Density::operator()(const std::vector<Point2<double>> &input) {
     for (int by = 0; by < bin_rows_; ++by) {
         for (int bx = 0; bx < bin_cols_; ++bx) {
             double overflow = bin_density_[by][bx] - bin_capacity_;
+            overflow /= bin_capacity_;  // Normalize to capacity
             // if (overflow > 0.0)
             value_ += overflow * overflow;  // Quadratic penalty
         }
@@ -246,7 +247,11 @@ const std::vector<Point2<double>> &Density::Backward() {
     const size_t num_modules = placement_.numModules();
 
     // Reset gradients
-    grad_.assign(num_modules, Point2<double>(0.0, 0.0));
+    // this->grad_.assign(num_modules, Point2<double>(0.0, 0.0));
+
+    for (auto &g : grad_) {
+        g = Point2<double>(0.0, 0.0);
+    }
 
     for (size_t i = 0; i < num_modules; ++i) {
         Module &mod = placement_.module(i);
@@ -281,15 +286,17 @@ const std::vector<Point2<double>> &Density::Backward() {
                 double dD_dy = area * g * (dy / sigma_sq_);
 
                 double overflow = bin_density_[by][bx] - bin_capacity_;
-                if (overflow > 0.0) {
-                    grad_[i].x += 2.0 * overflow * (-dD_dx);  // negative sign because bin moves opposite to module
-                    grad_[i].y += 2.0 * overflow * (-dD_dy);
-                }
+                // cout << "overflow: " << overflow << "-dD_dx: " << dD_dx << ", -dD_dy: " << dD_dy << std::endl;
+                // if (overflow > 0.0) {
+                    this->grad_[i].x += 2.0 * overflow * (-dD_dx / bin_capacity_);
+                    this->grad_[i].y += 2.0 * overflow * (-dD_dy / bin_capacity_);
+                // }
+                // cout << "grad[" << i << "]: (" << this->grad_[i].x << ", " << this->grad_[i].y << ")" << std::endl;
             }
         }
     }
 
-    return grad_;
+    return this->grad_;
 }
 
 
@@ -315,21 +322,35 @@ const double &ObjectiveFunction::operator()(const std::vector<Point2<double>> &i
 
 
 
-const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
-    const std::vector<Point2<double>> &grad_wl = wirelength_.Backward();
-    const std::vector<Point2<double>> &grad_dp = density_.Backward();
+// const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
+//     const std::vector<Point2<double>> &grad_wl = wirelength_.Backward();
+//     const std::vector<Point2<double>> &grad_dp = density_.Backward();
 
+//     for (size_t i = 0; i < grad_.size(); ++i) {
+//         grad_[i].x = grad_wl[i].x + lambda_ * grad_dp[i].x;
+//         grad_[i].y = grad_wl[i].y + lambda_ * grad_dp[i].y;
+//         // cout << "grad_wl[" << i << "]: " << grad_wl[i].x << ", " << grad_wl[i].y << std::endl;
+//         cout << "grad_dp[" << i << "]: " << grad_dp[i].x << ", " << grad_dp[i].y << std::endl;
+//     }
+
+//     return grad_;
+// }
+
+
+const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
+    // Store gradients in temporary vectors to prevent overwrites
+    auto grad_wl = wirelength_.Backward();  // Make a copy
+    auto grad_dp = density_.Backward();     // Make a copy
+    // cout << "test" << density_.getBinCapacity() << ", " << density_.grad()[11110].y << std::endl;
     for (size_t i = 0; i < grad_.size(); ++i) {
         grad_[i].x = grad_wl[i].x + lambda_ * grad_dp[i].x;
         grad_[i].y = grad_wl[i].y + lambda_ * grad_dp[i].y;
-        // cout << "grad_[" << i << "]: " << grad_[i].x << ", " << grad_[i].y << std::endl;
+        // cout << "grad_wl[" << i << "]: " << grad_wl[i].x << ", " << grad_wl[i].y << std::endl;
+        // cout << "grad_dp[" << i << "]: " << grad_dp[i].x << ", " << grad_dp[i].y << std::endl;
     }
 
     return grad_;
 }
-
-
-
 
 void ObjectiveFunction::setLambda(double lambda) {
     lambda_ = lambda;
