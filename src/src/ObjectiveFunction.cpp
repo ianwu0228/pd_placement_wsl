@@ -63,9 +63,20 @@ const double &Wirelength::operator()(const std::vector<Point2<double>> &input) {
 
         auto wa = [&](const vector<double> &coord, double sign) {
             double max_coord = *max_element(coord.begin(), coord.end());
+            double min_coord = *min_element(coord.begin(), coord.end());
             double sum_exp = 0.0, sum_pos = 0.0;
+            double e = 0.0;
             for (auto c : coord) {
-                double e = exp(sign * (c - max_coord) / gamma_);
+                if(sign == 1) 
+                {
+                    e = exp(sign * (c - max_coord) / gamma_);
+                }
+                else
+                {
+                    e = exp(sign * (c - min_coord) / gamma_);
+
+                }
+                
                 sum_exp += e;
                 sum_pos += c * e;
             }
@@ -75,6 +86,7 @@ const double &Wirelength::operator()(const std::vector<Point2<double>> &input) {
         double wx = wa(x, 1.0) - wa(x, -1.0);
         double wy = wa(y, 1.0) - wa(y, -1.0);
         value_ += wx + wy;
+        // cout << "Wirelength for net " << netId << ": " << wx + wy << endl;
     }
 
     return value_;
@@ -94,7 +106,6 @@ const std::vector<Point2<double>> &Wirelength::Backward() {
 
         std::vector<double> x(pinCount), y(pinCount);
         std::vector<int> moduleIds(pinCount);
-        
         std::vector<bool> isFixed(pinCount);
 
         // Step 1: Collect pin positions (as in operator())
@@ -309,6 +320,7 @@ Density::Density(Placement &placement, int bin_rows, int bin_cols, double alpha,
     : BaseFunction(placement.numModules()), placement_(placement),
       bin_rows_(bin_rows), bin_cols_(bin_cols), alpha_(alpha), target_density_(target_density)
 {
+
     chip_left_ = placement.boundryLeft();
     chip_right_ = placement.boundryRight();
     chip_bottom_ = placement.boundryBottom();
@@ -330,16 +342,61 @@ double Density::sigmoid(double d, double lower, double upper) const {
     return f;
 }
 
-double Density::sigmoid_derivative(double d, double lower, double upper) const
-{
-    double num = -alpha_ * (exp(alpha_ * (d - lower)) - exp(alpha_ * (upper - d)));
-    num *= exp(alpha_ * (d - lower) + alpha_ * (upper - d));
+// double Density::sigmoid_derivative(double d, double lower, double upper) const
+// {
+//     // double num = -alpha_ * (exp(alpha_ * (d - lower)) - exp(alpha_ * (upper - d)));
+//     // num *= exp(alpha_ * (d - lower) + alpha_ * (upper - d));
 
-    double den = pow((exp(alpha_ * (upper - d)) + 1), 2);
-    den *= pow((exp(alpha_ * (d - lower)) + 1), 2);
+//     // double den = pow((exp(alpha_ * (upper - d)) + 1), 2);
+//     // den *= pow((exp(alpha_ * (d - lower)) + 1), 2);
 
-    return (num / den);
+//     // return (num / den);
 
+//     double term1_num = alpha_ * exp(-alpha_ * (d - lower));
+//     double term1_den1 = 1 + exp(-alpha_ * (upper - d));
+//     double term1_den2 = pow(1 + exp(-alpha_ * (d - lower)), 2);
+//     double term1 = term1_num / (term1_den1 * term1_den2);
+
+//     double term2_num = alpha_ * exp(-alpha_ * (upper - d));
+//     double term2_den1 = 1 + exp(-alpha_ * (d - lower));
+//     double term2_den2 = pow(1 + exp(-alpha_ * (upper - d)), 2);
+//     double term2 = term2_num / (term2_den1 * term2_den2);
+
+//     return term1 - term2;
+// }
+
+double Density::sigmoid_derivative(double d, double lower, double upper) const {
+    // Debug prints
+    if (std::abs(d) > 1e6 || std::abs(lower) > 1e6 || std::abs(upper) > 1e6) {
+        cout << "Large input values: d=" << d << ", lower=" << lower << ", upper=" << upper << endl;
+    }
+
+    // Limit exponential arguments
+    double exp1 = std::min(std::max(-alpha_ * (d - lower), -500.0), 500.0);
+    double exp2 = std::min(std::max(-alpha_ * (upper - d), -500.0), 500.0);
+
+    double term1_num = alpha_ * exp(exp1);
+    double term1_den1 = 1 + exp(exp2);
+    double term1_den2 = pow(1 + exp(exp1), 2);
+    
+    // Check for division by zero
+    if (term1_den1 < 1e-300 || term1_den2 < 1e-300) {
+        return 0.0;  // Return safe value
+    }
+    
+    double term1 = term1_num / (term1_den1 * term1_den2);
+
+    double term2_num = alpha_ * exp(exp2);
+    double term2_den1 = 1 + exp(exp1);
+    double term2_den2 = pow(1 + exp(exp2), 2);
+    
+    if (term2_den1 < 1e-300 || term2_den2 < 1e-300) {
+        return 0.0;  // Return safe value
+    }
+    
+    double term2 = term2_num / (term2_den1 * term2_den2);
+
+    return term1 - term2;
 }
 
 
@@ -389,12 +446,12 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
             {
                 double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
                 double dy = bin_center_y - mod_center_y;
-                double sy = sigmoid(dy, -mod_h/2, mod_h/2);
+                double sy = sigmoid(dy, -(mod_h + 2*bin_height_)/2, (mod_h + 2*bin_height_)/2);
                 for(int bx = bin_x_min; bx <= bin_x_max; ++bx)
                 {
                     double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
                     double dx = bin_center_x - mod_center_x;
-                    double sx = sigmoid(dx, -mod_w/2, mod_w/2);
+                    double sx = sigmoid(dx, -(mod_w)/2, (mod_w)/2);
                     
                     
                     double density_influence = sx * sy;
@@ -404,6 +461,9 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
             }
         
     }
+
+
+
     // calculate the value for the term density
     // density term sum(D_b(x, y) - M_b)^2
     // D_b, density for bin b
@@ -485,6 +545,12 @@ const vector<Point2<double>> & Density::Backward()
 
                     grad_[i].x += 2.0 * overflow * area * sy * sx_deriv / bin_capacity_;
                     grad_[i].y += 2.0 * overflow * area * sx * sy_deriv / bin_capacity_;
+
+
+                    // cout << "(w, h) = " << "(" << w << ", " << h << ")" << endl;
+                    // cout << "(dx, dy) = " << "(" << dx << ", " << dy << ")" << endl;
+                    // cout << "overflow = " << overflow << "(sx, sy)" << "(" << sx << ", " << sy << ")" << "sx_deriv = " << sx_deriv << ", sy_deriv = " << sy_deriv << endl;
+                    // cout << "(sx_deriv, sy_deriv) = " << "(" << sx_deriv << ", " << sy_deriv << ")" << endl;
                 }
             }
     }
@@ -519,10 +585,10 @@ const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
     // Store gradients in temporary vectors to prevent overwrites
     auto grad_wl = wirelength_.Backward();  // Make a copy
     auto grad_dp = density_.Backward();     // Make a copy
-    // cout << "test" << density_.getBinCapacity() << ", " << density_.grad()[11110].y << std::endl;
+
     for (size_t i = 0; i < grad_.size(); ++i) {
-        grad_[i].x = grad_wl[i].x + 0*lambda_ * grad_dp[i].x;
-        grad_[i].y = grad_wl[i].y + 0*lambda_ * grad_dp[i].y;
+        grad_[i].x = 0*grad_wl[i].x + lambda_ * grad_dp[i].x;
+        grad_[i].y = 0*grad_wl[i].y + lambda_ * grad_dp[i].y;
         // cout << "grad_wl[" << i << "]: " << grad_wl[i].x << ", " << grad_wl[i].y << std::endl;
         // cout << "lambda * grad_dp[" << i << "]: " << lambda_ * grad_dp[i].x << ", " << lambda_ * grad_dp[i].y << std::endl;
     }

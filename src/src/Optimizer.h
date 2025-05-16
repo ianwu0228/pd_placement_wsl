@@ -58,6 +58,7 @@ class SimpleConjugateGradient : public BaseOptimizer {
 
     // Perform one optimization step
     void Step() override;
+    void setAlpha(double alpha) { alpha_ = alpha; }  // Optional: expose dynamic α adjustment
 
    private:
     /////////////////////////////////

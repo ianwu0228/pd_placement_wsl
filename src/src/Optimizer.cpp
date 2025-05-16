@@ -65,6 +65,19 @@ void SimpleConjugateGradient::Step() {
     // Assume the step size is constant
     // TODO(Optional): Change to dynamic step-size control
 
+    // === Dynamic Step-Size ===
+    double s = 10000.0; // target average move distance (tunable)
+    double norm = 0.0;
+    for (size_t i = 0; i < kNumModule; ++i) {
+        norm += dir[i].x * dir[i].x + dir[i].y * dir[i].y;
+    }
+    norm = std::sqrt(norm); // L2 norm
+
+    double dynamic_alpha = (norm < 1e-12) ? 0.0 : s / norm;
+    setAlpha(dynamic_alpha);  // or alpha_ = dynamic_alpha;
+
+    // std::cout << "[Dynamic Step Size] alpha = " << dynamic_alpha << ", norm = " << norm << std::endl;
+
     // Update the solution
     // Please be aware of the updating directions, i.e., the sign for each term.
     for (size_t i = 0; i < kNumModule; ++i) {

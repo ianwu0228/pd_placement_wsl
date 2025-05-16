@@ -14,6 +14,10 @@ GlobalPlacer::GlobalPlacer(Placement &placement)
 }
 
 void GlobalPlacer::place() {
+
+    // pre-process "shift the bottom-left cell to (0,0)"
+
+
     ////////////////////////////////////////////////////////////////////
     // This section is an example for analytical methods.
     // The objective is to minimize the following function:
@@ -56,16 +60,16 @@ void GlobalPlacer::place() {
     }
    
 
-    int bin_rows = 800;
-    int bin_cols = 800;
-   
+    // int bin_rows, bin_cols = (int)((_placement.boundryRight() - _placement.boundryLeft())/3); // 800 for ibm05
+    int bin_rows = (int)((_placement.boundryRight() - _placement.boundryLeft())/3);
+    int bin_cols = (int)((_placement.boundryRight() - _placement.boundryLeft())/3); 
+
     Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
     Density density_(_placement, /*bin_rows=*/bin_rows, /*bin_cols=*/bin_cols, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
     ObjectiveFunction obj(_placement, /*lambda=*/0.001, wirelength_, density_);
 
-    const double kAlpha = 10;                         // Constant step size
+    const double kAlpha = 5;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
-
 
     // Initialize the optimizer
     optimizer.Initialize();
@@ -140,8 +144,106 @@ void GlobalPlacer::place() {
             cout << "Max density      : " << max_density << endl;
 
 
+            // ///////////////////////////////////////////////////////////////////////////////////////
+
+            // system("mkdir -p plot_output");
+            
+            // ////////////////////////////////// Density Map Plot //////////////////////////////////
+            // string densityname = "plot_output/density_" + std::to_string(i) + ".plt";
+            // string densitypng = "plot_output/density_" + std::to_string(i) + ".png";
+            
+            // ofstream densityfile(densityname.c_str(), ios::out);
+            // densityfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
+            // densityfile << "set output '" << densitypng << "'" << endl;
+            // densityfile << "set title \"Density Map - Iteration " << i << "\"" << endl;
+            // densityfile << "set view map" << endl;
+            // densityfile << "set size ratio 1" << endl;
+            // densityfile << "unset key" << endl;
+            // densityfile << "set palette defined (0 'white', 0.5 'yellow', 1 'red', 2 'dark-red')" << endl;
+            // densityfile << "set cbrange [0:2]" << endl;
+            // densityfile << "set cblabel 'Density'" << endl;
+            // densityfile << "set xrange [0:" << bin_density[0].size()-1 << "]" << endl;
+            // densityfile << "set yrange [0:" << bin_density.size()-1 << "]" << endl;
+
+            
+        
+            // densityfile << "set pm3d map" << endl;
+            // densityfile << "splot '-' using 1:2:3 notitle" << endl;
+
+            // for (size_t y = 0; y < bin_density.size(); ++y) {
+            //     for (size_t x = 0; x < bin_density[y].size(); ++x) {
+            //         densityfile << x << " " << y << " " << bin_density[y][x] << endl;
+            //     }
+            //     densityfile << endl;
+            // }
+            // densityfile << "e" << endl;
+
+            // densityfile.close();
+            
+            // ////////////////////////////////// Cell Distribution Plot //////////////////////////////////
+            // string cellname = "plot_output/cells_" + std::to_string(i) + ".plt";
+            // string cellpng = "plot_output/cells_" + std::to_string(i) + ".png";
+            
+            // ofstream cellfile(cellname.c_str(), ios::out);
+            // cellfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
+            // cellfile << "set output '" << cellpng << "'" << endl;
+            // cellfile << "set title \"Cell Distribution - Iteration " << i 
+            //         << "\\nWL = " << wirelength_(t) << ", DP = " << density_(t) << "\"" << endl;
+            // cellfile << "set size ratio 1" << endl;
+            // cellfile << "set xrange [" << _placement.boundryLeft() << ":" 
+            //         << _placement.boundryRight() << "]" << endl;
+            // cellfile << "set yrange [" << _placement.boundryBottom() << ":" 
+            //         << _placement.boundryTop() << "]" << endl;
+            
+            // // Set point styles
+            // cellfile << "set style line 1 lc rgb 'red' pt 7 ps 0.3" << endl;
+            // cellfile << "set style line 2 lc rgb 'blue' pt 7 ps 0.3" << endl;
+            // cellfile << "set style line 3 lc rgb 'black' lt 1 lw 2" << endl;
+            
+            // // Plot command
+            // cellfile << "plot '-' w p ls 1 title 'Fixed', "
+            //         << "     '-' w p ls 2 title 'Movable', "
+            //         << "     '-' w l ls 3 title 'Boundary'" << endl;
+            
+            // // Plot fixed modules
+            // for (size_t j = 0; j < t.size(); ++j) {
+            //     if (_placement.module(j).isFixed()) {
+            //         cellfile << t[j].x << " " << t[j].y << endl;
+            //     }
+            // }
+            // cellfile << "e" << endl;
+            
+            // // Plot movable modules
+            // for (size_t j = 0; j < t.size(); ++j) {
+            //     if (!_placement.module(j).isFixed()) {
+            //         cellfile << t[j].x << " " << t[j].y << endl;
+            //     }
+            // }
+            // cellfile << "e" << endl;
+            
+            // // Plot boundary
+            // plotBoxPLT(cellfile, _placement.boundryLeft(), _placement.boundryBottom(), 
+            //         _placement.boundryRight(), _placement.boundryTop());
+            // cellfile << "e" << endl;
+            // cellfile.close();
+
+            // // Execute gnuplot
+            // char cmd[256];
+            // sprintf(cmd, "gnuplot %s %s", densityname.c_str(), cellname.c_str());
+            // system(cmd);
+
+            // // Combine the two plots side by side
+            // sprintf(cmd, "convert +append %s %s plot_output/combined_%zu.png", 
+            //         densitypng.c_str(), cellpng.c_str(), i);
+            // system(cmd);
+
+            // printf("Generated plots for iteration %zu\n", i);
             ///////////////////////////////////////////////////////////////////////////////////////
 
+
+            ////////////////////////////////////////////////////////////////////////////////////////
+            // Check if we have fixed and movable modules
+            
             system("mkdir -p plot_output");
             
             ////////////////////////////////// Density Map Plot //////////////////////////////////
@@ -162,20 +264,7 @@ void GlobalPlacer::place() {
             densityfile << "set yrange [0:" << bin_density.size()-1 << "]" << endl;
 
             
-            // Write density data
-            // for (size_t y = 0; y < bin_density.size(); ++y) {
-            //     for (size_t x = 0; x < bin_density[y].size(); ++x) {
-            //         densityfile << x << " " << y << " " << bin_density[y][x] << endl;
-            //     }
-            //     densityfile << endl;
-            // }
-
-            // densityfile << "EOD" << endl;
-            
-            // densityfile << "plot '$data' using 1:2:3 with image" << endl;
-
-            // densityfile << "set pm3d map\nsplot '$data' using 1:2:3 notitle" << endl;
-
+        
             densityfile << "set pm3d map" << endl;
             densityfile << "splot '-' using 1:2:3 notitle" << endl;
 
@@ -189,10 +278,21 @@ void GlobalPlacer::place() {
 
             densityfile.close();
             
-            ////////////////////////////////// Cell Distribution Plot //////////////////////////////////
+            bool hasFixed = false;
+            bool hasMovable = false;
+            for (size_t j = 0; j < t.size(); ++j) {
+                if (_placement.module(j).isFixed()) {
+                    hasFixed = true;
+                } else {
+                    hasMovable = true;
+                }
+                if (hasFixed && hasMovable) break;
+            }
+
+            // Cell Distribution Plot
             string cellname = "plot_output/cells_" + std::to_string(i) + ".plt";
             string cellpng = "plot_output/cells_" + std::to_string(i) + ".png";
-            
+
             ofstream cellfile(cellname.c_str(), ios::out);
             cellfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
             cellfile << "set output '" << cellpng << "'" << endl;
@@ -203,34 +303,45 @@ void GlobalPlacer::place() {
                     << _placement.boundryRight() << "]" << endl;
             cellfile << "set yrange [" << _placement.boundryBottom() << ":" 
                     << _placement.boundryTop() << "]" << endl;
-            
+
             // Set point styles
             cellfile << "set style line 1 lc rgb 'red' pt 7 ps 0.3" << endl;
             cellfile << "set style line 2 lc rgb 'blue' pt 7 ps 0.3" << endl;
             cellfile << "set style line 3 lc rgb 'black' lt 1 lw 2" << endl;
-            
-            // Plot command
-            cellfile << "plot '-' w p ls 1 title 'Fixed', "
-                    << "     '-' w p ls 2 title 'Movable', "
-                    << "     '-' w l ls 3 title 'Boundary'" << endl;
-            
-            // Plot fixed modules
-            for (size_t j = 0; j < t.size(); ++j) {
-                if (_placement.module(j).isFixed()) {
-                    cellfile << t[j].x << " " << t[j].y << endl;
-                }
+
+            // Construct plot command based on what types of modules exist
+            string plotCmd = "plot ";
+            if (hasFixed) {
+                plotCmd += "'-' w p ls 1 title 'Fixed'";
+                if (hasMovable) plotCmd += ", ";
             }
-            cellfile << "e" << endl;
-            
-            // Plot movable modules
-            for (size_t j = 0; j < t.size(); ++j) {
-                if (!_placement.module(j).isFixed()) {
-                    cellfile << t[j].x << " " << t[j].y << endl;
-                }
+            if (hasMovable) {
+                plotCmd += "'-' w p ls 2 title 'Movable'";
             }
-            cellfile << "e" << endl;
-            
-            // Plot boundary
+            plotCmd += ", '-' w l ls 3 title 'Boundary'";
+            cellfile << plotCmd << endl;
+
+            // Plot fixed modules if they exist
+            if (hasFixed) {
+                for (size_t j = 0; j < t.size(); ++j) {
+                    if (_placement.module(j).isFixed()) {
+                        cellfile << t[j].x << " " << t[j].y << endl;
+                    }
+                }
+                cellfile << "e" << endl;
+            }
+
+            // Plot movable modules if they exist
+            if (hasMovable) {
+                for (size_t j = 0; j < t.size(); ++j) {
+                    if (!_placement.module(j).isFixed()) {
+                        cellfile << t[j].x << " " << t[j].y << endl;
+                    }
+                }
+                cellfile << "e" << endl;
+            }
+
+            // Always plot boundary
             plotBoxPLT(cellfile, _placement.boundryLeft(), _placement.boundryBottom(), 
                     _placement.boundryRight(), _placement.boundryTop());
             cellfile << "e" << endl;
@@ -247,6 +358,7 @@ void GlobalPlacer::place() {
             system(cmd);
 
             printf("Generated plots for iteration %zu\n", i);
+            /////////////////////////////////////////////////////////////////////////////////////////////
         }
 
         optimizer.Step();
@@ -308,6 +420,9 @@ void GlobalPlacer::place() {
         // cout << _placement.module(i).name() << " (" << _placement.module(i).centerX() << ", " << _placement.module(i).centerY() << ")" << endl;
     }
     printf("INFO: %lu / %lu modules are fixed.\n", fixed_cnt, num_modules);
+
+
+
 }
 
 void GlobalPlacer::plotPlacementResult(const string outfilename, bool isPrompt) {
