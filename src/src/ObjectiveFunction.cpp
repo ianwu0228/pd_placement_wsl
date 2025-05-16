@@ -329,9 +329,21 @@ double Density::sigmoid(double d, double lower, double upper) const {
     return f;
 }
 
+double Density::sigmoid_derivative(double d, double lower, double upper) const
+{
+    double num = -alpha_ * (exp(alpha_ * (d - lower)) - exp(alpha_ * (upper - d)));
+    num *= exp(alpha_ * (d - lower) + alpha_ * (upper - d));
 
+    double den = pow((exp(alpha_ * (upper - d)) + 1), 2);
+    den *= pow((exp(alpha_ * (d - lower)) + 1), 2);
+
+    return (num / den);
+
+}
+
+
+// operator () calculates the current density value(summing all the bins)
 const double& Density::operator()(const std::vector<Point2<double>> &input) {
-
 
     value_ = 0.0;
     input_ = input;  
@@ -347,8 +359,8 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
 
         // some constants
         const double mod_area = mod.area();
-        const double mod_center_x = mod.centerX();
-        const double mod_center_y = mod.centerY();
+        const double mod_center_x = input[i].x;
+        const double mod_center_y = input[i].y;
         const double mod_h = mod.height();
         const double mod_w = mod.width();
 
@@ -383,7 +395,7 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
                 double sy = sigmoid(dy, -mod_h/2, mod_h/2);
                 
                 double density_influence = sx * sy;
-                bin_density_[dx][dy] += density_influence;
+                bin_density_[bx][by] += density_influence;
             }
         }
     }
@@ -401,10 +413,11 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
             value_ += overflow * overflow;
         }
     }
-    return value_;
+    return value_ ;
 }
 
 
+// backward function calculates the graident
 const vector<Point2<double>> & Density::Backward()
 {
     const size_t num_modules = placement_.numModules();
@@ -434,11 +447,37 @@ const vector<Point2<double>> & Density::Backward()
         double x_max = cx + influence_range_x / 2;
         double y_min = cy - influence_range_y / 2;
         double y_max = cy + influence_range_y / 2;
+        
+        
+        // map to specific grid(s)
+        int bin_x_min = max(0, (int)((x_min - chip_left_) / bin_width_));
+        int bin_x_max = min(bin_cols_ - 1, (int)((x_max - chip_left_) / (bin_width_)));
+        int bin_y_min = max(0, (int)((y_min - chip_bottom_) / (bin_height_)));
+        int bin_y_max = min(bin_rows_ - 1, (int)((y_max - chip_bottom_) / (bin_height_)));
 
+        // calculate each cell's gradient contributed by each bin oevrlapping with the cell itself
+        for (int by = bin_y_min; by <= bin_y_max; ++by) {
+                double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
+                double dy = bin_center_y - cy;
+                double sy = sigmoid(dy, -h/2, h/2);
+                double sy_deriv = sigmoid_derivative(dy, -h/2, h/2);
 
+                for (int bx = bin_x_min; bx <= bin_x_max; ++bx) {
+                    double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
+                    double dx = bin_center_x - cx;
+                    double sx = sigmoid(dx, -w/2, w/2);
+                    double sx_deriv = sigmoid_derivative(dx, -w/2, w/2);
 
+                    double overflow = bin_density_[bx][by] - bin_capacity_;
+                    overflow /= bin_capacity_; // normalize overflow
+
+                    grad_[i].x += 2.0 * overflow * area * sy * sx_deriv / bin_capacity_;
+                    grad_[i].y += 2.0 * overflow * area * sx * sy_deriv / bin_capacity_;
+                }
+            }
     }
 
+    return grad_;
 
 }
 
@@ -470,8 +509,8 @@ const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
     auto grad_dp = density_.Backward();     // Make a copy
     // cout << "test" << density_.getBinCapacity() << ", " << density_.grad()[11110].y << std::endl;
     for (size_t i = 0; i < grad_.size(); ++i) {
-        grad_[i].x = grad_wl[i].x + lambda_ * grad_dp[i].x;
-        grad_[i].y = grad_wl[i].y + lambda_ * grad_dp[i].y;
+        grad_[i].x = 0*grad_wl[i].x + lambda_ * grad_dp[i].x;
+        grad_[i].y = 0*grad_wl[i].y + lambda_ * grad_dp[i].y;
         // cout << "grad_wl[" << i << "]: " << grad_wl[i].x << ", " << grad_wl[i].y << std::endl;
         // cout << "grad_dp[" << i << "]: " << grad_dp[i].x << ", " << grad_dp[i].y << std::endl;
     }

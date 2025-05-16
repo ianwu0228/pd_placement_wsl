@@ -121,7 +121,7 @@ class Wirelength : public BaseFunction {
 
 class Density : public BaseFunction {
     public:
-        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double alpha = 2.0, double target_density = 0.9);
+        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double alpha = 5.0, double target_density = 0.9);
 
 
         
@@ -149,6 +149,8 @@ class Density : public BaseFunction {
 
         // Sigmoid function used for smoothing density influence
         double sigmoid(double d, double lower, double upper) const;
+        double sigmoid_derivative(double d, double lowwer, double upper) const;
+
 };
 
 

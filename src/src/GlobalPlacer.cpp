@@ -56,7 +56,7 @@ void GlobalPlacer::place() {
 
    
     // ExampleFunction foo(_placement);                    // Objective function
-    ObjectiveFunction obj(_placement, /*lambda=*/0);
+    ObjectiveFunction obj(_placement, /*lambda=*/100000);
 
     const double kAlpha = 10;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
@@ -68,7 +68,7 @@ void GlobalPlacer::place() {
     optimizer.Initialize();
 
     Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
-    Density density_(_placement, /*bin_rows=*/500, /*bin_cols=*/500, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
+    Density density_(_placement, /*bin_rows=*/100, /*bin_cols=*/100, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
     // Perform optimization, the termination condition is that the number of iterations reaches 100
     // TODO: You may need to change the termination condition, which is determined by the overflow ratio.
     // for (size_t i = 0; i < 100; ++i) {
@@ -89,7 +89,6 @@ void GlobalPlacer::place() {
         
         // Get current density map
         vector<vector<double>> bin_density = density_.getBinDensity();
-
         // Plot every 10 iterations
         if (i % 10 == 0) {
             // Create output directory
