@@ -32,15 +32,15 @@ void GlobalPlacer::place() {
     std::mt19937 gen(rd());
 
     // Create small random offsets (±5% of chip size around center)
-    double offset_x = _placement.boundryRight() * 0.05;  // 5% of chip width
-    double offset_y = _placement.boundryTop() * 0.05;    // 5% of chip height
+    double offset_x = (_placement.boundryRight() - _placement.boundryLeft()) * 0.005;  // 5% of chip width
+    double offset_y = (_placement.boundryTop() - _placement.boundryBottom())* 0.005;    // 5% of chip height
     std::uniform_real_distribution<> dis_x(-offset_x, offset_x);
     std::uniform_real_distribution<> dis_y(-offset_y, offset_y);
 
     // Center coordinates
-    double center_x = _placement.boundryRight() / 2;
-    double center_y = _placement.boundryTop() / 2;
-
+    double center_x = (_placement.boundryRight() + _placement.boundryLeft()) / 2;
+    double center_y = (_placement.boundryTop() + _placement.boundryBottom()) / 2;
+    cout << "center_x: " << center_x << ", center_y: " << center_y << endl;
     // std::vector<Point2<double>> t(num_modules);
     for (size_t i = 0; i < num_modules; ++i) {
         if (_placement.module(i).isFixed()) continue;
@@ -52,15 +52,18 @@ void GlobalPlacer::place() {
         );
         
         // print out the original position of all cells
-        // cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
+        cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
     }
+   
 
+    int bin_rows = 800;
+    int bin_cols = 800;
    
     Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
-    Density density_(_placement, /*bin_rows=*/1000, /*bin_cols=*/1000, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
-    ObjectiveFunction obj(_placement, /*lambda=*/0.01, wirelength_, density_);
+    Density density_(_placement, /*bin_rows=*/bin_rows, /*bin_cols=*/bin_cols, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
+    ObjectiveFunction obj(_placement, /*lambda=*/0.001, wirelength_, density_);
 
-    const double kAlpha = 100;                         // Constant step size
+    const double kAlpha = 10;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
 
 
@@ -89,6 +92,56 @@ void GlobalPlacer::place() {
         vector<vector<double>> bin_density = density_.getBinDensity();
         if (i % 10 == 0) {
             // Create output directory
+
+
+            
+            ///////////////////////////////////////////////////////////////////////////////////////
+            int bin_rows = bin_density.size();
+            int bin_cols = bin_density[0].size();
+
+            double min_density = std::numeric_limits<double>::max();
+            double max_density = std::numeric_limits<double>::lowest();
+
+            // Histogram bins
+            int count_0_05 = 0, count_05_1 = 0, count_1_15 = 0, count_15_2 = 0;
+            int count_2_10 = 0, count_10_20 = 0, count_20_50 = 0, count_50_100 = 0, count_over_100 = 0;
+
+            for (int y = 0; y < bin_rows; ++y) {
+                for (int x = 0; x < bin_cols; ++x) {
+                    double d = bin_density[y][x];
+
+                    // Update min/max
+                    min_density = std::min(min_density, d);
+                    max_density = std::max(max_density, d);
+
+                    // Histogram classification
+                    if (d < 0.5) count_0_05++;
+                    else if (d < 1.0) count_05_1++;
+                    else if (d < 1.5) count_1_15++;
+                    else if (d < 2.0) count_15_2++;
+                    else if (d < 10.0) count_2_10++;
+                    else if (d < 20.0) count_10_20++;
+                    else if (d < 50.0) count_20_50++;
+                    else if (d < 100.0) count_50_100++;
+                    else count_over_100++;
+                }
+            }
+            cout << "Density Histogram:" << endl;
+            cout << "  [0.0 ~ 0.5)    : " << count_0_05 << " bins" << endl;
+            cout << "  [0.5 ~ 1.0)    : " << count_05_1 << " bins" << endl;
+            cout << "  [1.0 ~ 1.5)    : " << count_1_15 << " bins" << endl;
+            cout << "  [1.5 ~ 2.0)    : " << count_15_2 << " bins" << endl;
+            cout << "  [2.0 ~ 10.0)   : " << count_2_10 << " bins" << endl;
+            cout << "  [10.0 ~ 20.0)  : " << count_10_20 << " bins" << endl;
+            cout << "  [20.0 ~ 50.0)  : " << count_20_50 << " bins" << endl;
+            cout << "  [50.0 ~ 100.0) : " << count_50_100 << " bins" << endl;
+            cout << "  [>100.0]       : " << count_over_100 << " bins" << endl;
+            cout << "Min density      : " << min_density << endl;
+            cout << "Max density      : " << max_density << endl;
+
+
+            ///////////////////////////////////////////////////////////////////////////////////////
+
             system("mkdir -p plot_output");
             
             ////////////////////////////////// Density Map Plot //////////////////////////////////
@@ -200,16 +253,7 @@ void GlobalPlacer::place() {
         
         // Get current density map
 
-        // int den_count = 0;
-        // for(int i = 0; i < 100; ++i)
-        // {
-        //     for(int j = 0; j < 100; ++j)
-        //     {
-        //         // cout << "inside step, density = " << bin_density[i][j] << endl;
-        //         if(bin_density[i][j] > 1) den_count++;
-        //     }
-        // }
-        // cout << "den_count = " << den_count << endl;
+       
 
 
         

@@ -61,11 +61,11 @@ const double &Wirelength::operator()(const std::vector<Point2<double>> &input) {
             }
         }
 
-        auto wa = [&](const std::vector<double> &coord, double sign) {
-            double max_coord = *std::max_element(coord.begin(), coord.end());
+        auto wa = [&](const vector<double> &coord, double sign) {
+            double max_coord = *max_element(coord.begin(), coord.end());
             double sum_exp = 0.0, sum_pos = 0.0;
             for (auto c : coord) {
-                double e = std::exp(sign * (c - max_coord) / gamma_);
+                double e = exp(sign * (c - max_coord) / gamma_);
                 sum_exp += e;
                 sum_pos += c * e;
             }
@@ -94,6 +94,7 @@ const std::vector<Point2<double>> &Wirelength::Backward() {
 
         std::vector<double> x(pinCount), y(pinCount);
         std::vector<int> moduleIds(pinCount);
+        
         std::vector<bool> isFixed(pinCount);
 
         // Step 1: Collect pin positions (as in operator())
@@ -115,25 +116,25 @@ const std::vector<Point2<double>> &Wirelength::Backward() {
             }
         }
 
-        auto computeGrad = [&](const std::vector<double> &coord, bool isX) {
-            double max_coord = *std::max_element(coord.begin(), coord.end());
-            double min_coord = *std::min_element(coord.begin(), coord.end());
+        auto computeGrad = [&](const vector<double> &coord, bool isX) {
+            double max_coord = *max_element(coord.begin(), coord.end());
+            double min_coord = *min_element(coord.begin(), coord.end());
 
             // WA max
-            std::vector<double> emax(pinCount), emax_sum_each(pinCount);
+            vector<double> emax(pinCount), emax_sum_each(pinCount);
             double sum_emax = 0, sum_x_emax = 0;
             for (size_t i = 0; i < pinCount; ++i) {
-                emax[i] = std::exp((coord[i] - max_coord) / gamma_);
+                emax[i] = exp((coord[i] - max_coord) / gamma_);
                 sum_emax += emax[i];
                 sum_x_emax += coord[i] * emax[i];
             }
             double wa_max = sum_x_emax / sum_emax;
 
             // WA min
-            std::vector<double> emin(pinCount), emin_sum_each(pinCount);
+            vector<double> emin(pinCount), emin_sum_each(pinCount);
             double sum_emin = 0, sum_x_emin = 0;
             for (size_t i = 0; i < pinCount; ++i) {
-                emin[i] = std::exp(-(coord[i] - min_coord) / gamma_);
+                emin[i] = exp(-(coord[i] - min_coord) / gamma_);
                 sum_emin += emin[i];
                 sum_x_emin += coord[i] * emin[i];
             }
@@ -480,6 +481,7 @@ const vector<Point2<double>> & Density::Backward()
 
                     double overflow = bin_density_[by][bx] - bin_capacity_;
                     overflow /= bin_capacity_; // normalize overflow
+                    // cout << "overflow = " << overflow << endl;
 
                     grad_[i].x += 2.0 * overflow * area * sy * sx_deriv / bin_capacity_;
                     grad_[i].y += 2.0 * overflow * area * sx * sy_deriv / bin_capacity_;
@@ -519,10 +521,10 @@ const std::vector<Point2<double>> &ObjectiveFunction::Backward() {
     auto grad_dp = density_.Backward();     // Make a copy
     // cout << "test" << density_.getBinCapacity() << ", " << density_.grad()[11110].y << std::endl;
     for (size_t i = 0; i < grad_.size(); ++i) {
-        grad_[i].x = 0*grad_wl[i].x + lambda_ * grad_dp[i].x;
-        grad_[i].y = 0*grad_wl[i].y + lambda_ * grad_dp[i].y;
+        grad_[i].x = grad_wl[i].x + 0*lambda_ * grad_dp[i].x;
+        grad_[i].y = grad_wl[i].y + 0*lambda_ * grad_dp[i].y;
         // cout << "grad_wl[" << i << "]: " << grad_wl[i].x << ", " << grad_wl[i].y << std::endl;
-        // cout << "grad_dp[" << i << "]: " << grad_dp[i].x << ", " << grad_dp[i].y << std::endl;
+        // cout << "lambda * grad_dp[" << i << "]: " << lambda_ * grad_dp[i].x << ", " << lambda_ * grad_dp[i].y << std::endl;
     }
 
     return grad_;
