@@ -163,7 +163,7 @@ class Density : public BaseFunction {
 
 class ObjectiveFunction : public BaseFunction {
     public:
-        ObjectiveFunction(Placement &placement, double lambda);
+        ObjectiveFunction(Placement &placement, double lambda, Wirelength wirelength, Density density);
 
         const double &operator()(const std::vector<Point2<double>> &input) override;
         const std::vector<Point2<double>> &Backward() override;

@@ -51,24 +51,23 @@ void GlobalPlacer::place() {
             center_y + dis_y(gen)
         );
         
-        cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
+        // print out the original position of all cells
+        // cout << _placement.module(i).name() << " (" << t[i].x << ", " << t[i].y << ")" << endl;
     }
 
    
-    // ExampleFunction foo(_placement);                    // Objective function
-    ObjectiveFunction obj(_placement, /*lambda=*/100000);
+    Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
+    Density density_(_placement, /*bin_rows=*/1000, /*bin_cols=*/1000, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
+    ObjectiveFunction obj(_placement, /*lambda=*/0.01, wirelength_, density_);
 
-    const double kAlpha = 10;                         // Constant step size
+    const double kAlpha = 100;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
 
-    // Set initial point
-    // t[0] = 4.;  // This set both t[0].x and t[0].y to 4.
 
     // Initialize the optimizer
     optimizer.Initialize();
 
-    Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
-    Density density_(_placement, /*bin_rows=*/100, /*bin_cols=*/100, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
+
     // Perform optimization, the termination condition is that the number of iterations reaches 100
     // TODO: You may need to change the termination condition, which is determined by the overflow ratio.
     // for (size_t i = 0; i < 100; ++i) {
@@ -85,11 +84,9 @@ void GlobalPlacer::place() {
 
     // }
     for (size_t i = 0; i < 100; ++i) {
-        optimizer.Step();
         
-        // Get current density map
+        
         vector<vector<double>> bin_density = density_.getBinDensity();
-        // Plot every 10 iterations
         if (i % 10 == 0) {
             // Create output directory
             system("mkdir -p plot_output");
@@ -110,18 +107,33 @@ void GlobalPlacer::place() {
             densityfile << "set cblabel 'Density'" << endl;
             densityfile << "set xrange [0:" << bin_density[0].size()-1 << "]" << endl;
             densityfile << "set yrange [0:" << bin_density.size()-1 << "]" << endl;
+
             
             // Write density data
-            densityfile << "$data << EOD" << endl;
+            // for (size_t y = 0; y < bin_density.size(); ++y) {
+            //     for (size_t x = 0; x < bin_density[y].size(); ++x) {
+            //         densityfile << x << " " << y << " " << bin_density[y][x] << endl;
+            //     }
+            //     densityfile << endl;
+            // }
+
+            // densityfile << "EOD" << endl;
+            
+            // densityfile << "plot '$data' using 1:2:3 with image" << endl;
+
+            // densityfile << "set pm3d map\nsplot '$data' using 1:2:3 notitle" << endl;
+
+            densityfile << "set pm3d map" << endl;
+            densityfile << "splot '-' using 1:2:3 notitle" << endl;
+
             for (size_t y = 0; y < bin_density.size(); ++y) {
                 for (size_t x = 0; x < bin_density[y].size(); ++x) {
                     densityfile << x << " " << y << " " << bin_density[y][x] << endl;
                 }
                 densityfile << endl;
             }
-            densityfile << "EOD" << endl;
-            
-            densityfile << "plot '$data' using 1:2:3 with image" << endl;
+            densityfile << "e" << endl;
+
             densityfile.close();
             
             ////////////////////////////////// Cell Distribution Plot //////////////////////////////////
@@ -183,6 +195,24 @@ void GlobalPlacer::place() {
 
             printf("Generated plots for iteration %zu\n", i);
         }
+
+        optimizer.Step();
+        
+        // Get current density map
+
+        // int den_count = 0;
+        // for(int i = 0; i < 100; ++i)
+        // {
+        //     for(int j = 0; j < 100; ++j)
+        //     {
+        //         // cout << "inside step, density = " << bin_density[i][j] << endl;
+        //         if(bin_density[i][j] > 1) den_count++;
+        //     }
+        // }
+        // cout << "den_count = " << den_count << endl;
+
+
+        
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -229,7 +259,9 @@ void GlobalPlacer::place() {
         // _placement.module(i).setPosition(x, y);
         // /////////////////////////////////// random placement end ///////////////////////
 
-        cout << _placement.module(i).name() << " (" << _placement.module(i).centerX() << ", " << _placement.module(i).centerY() << ")" << endl;
+
+        // print out the final position of all cells
+        // cout << _placement.module(i).name() << " (" << _placement.module(i).centerX() << ", " << _placement.module(i).centerY() << ")" << endl;
     }
     printf("INFO: %lu / %lu modules are fixed.\n", fixed_cnt, num_modules);
 }

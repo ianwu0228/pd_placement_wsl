@@ -382,37 +382,47 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
 
         // accumulate density by applying sigmoid function
         // x axis
-        for(int bx = bin_x_min; bx <= bin_x_max; ++bx)
-        {
-            double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
-            double dx = bin_center_x - mod_center_x;
-            double sx = sigmoid(dx, -mod_w/2, mod_w/2);
+        
 
             for(int by = bin_y_min; by <= bin_y_max; ++by)
             {
                 double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
                 double dy = bin_center_y - mod_center_y;
                 double sy = sigmoid(dy, -mod_h/2, mod_h/2);
+                for(int bx = bin_x_min; bx <= bin_x_max; ++bx)
+                {
+                    double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
+                    double dx = bin_center_x - mod_center_x;
+                    double sx = sigmoid(dx, -mod_w/2, mod_w/2);
+                    
+                    
+                    double density_influence = sx * sy;
+                    bin_density_[by][bx] += density_influence;
+                }
                 
-                double density_influence = sx * sy;
-                bin_density_[bx][by] += density_influence;
             }
-        }
+        
     }
     // calculate the value for the term density
     // density term sum(D_b(x, y) - M_b)^2
     // D_b, density for bin b
     // M_b, max density for bin b
 
-    for(int bx = 0; bx < bin_cols_; ++bx)
+    // int den_count_obj = 0;
+
+    for(int by = 0; by < bin_rows_; ++by)
     {
-        for(int by = 0; by < bin_rows_; ++by)
+        for(int bx = 0; bx < bin_cols_; ++bx)
         {
-            double overflow = bin_density_[bx][by] - bin_capacity_;
+            double overflow = bin_density_[by][bx] - bin_capacity_;
             overflow /= bin_capacity_;
+            // if(bin_density_[bx][by] > 1)den_count_obj++;
+            // cout << "bin_density = " << bin_density_[bx][by] << "overflow = " << overflow << endl;
             value_ += overflow * overflow;
         }
     }
+    // cout << "(cols, rows) = " << "(" << bin_cols_ << "," << bin_rows_ << ")"  "den_count_obj = " << den_count_obj << endl;
+
     return value_ ;
 }
 
@@ -468,7 +478,7 @@ const vector<Point2<double>> & Density::Backward()
                     double sx = sigmoid(dx, -w/2, w/2);
                     double sx_deriv = sigmoid_derivative(dx, -w/2, w/2);
 
-                    double overflow = bin_density_[bx][by] - bin_capacity_;
+                    double overflow = bin_density_[by][bx] - bin_capacity_;
                     overflow /= bin_capacity_; // normalize overflow
 
                     grad_[i].x += 2.0 * overflow * area * sy * sx_deriv / bin_capacity_;
@@ -483,10 +493,10 @@ const vector<Point2<double>> & Density::Backward()
 
 
 
-ObjectiveFunction::ObjectiveFunction(Placement &placement, double lambda)
+ObjectiveFunction::ObjectiveFunction(Placement &placement, double lambda, Wirelength wirelength, Density density)
     : BaseFunction(placement.numModules()),
-      wirelength_(placement, /*gamma=*/5000.0),  // set γ as needed
-      density_(placement),                       // default: 50×50 grid
+      wirelength_(wirelength),  // set γ as needed
+      density_(density),                       // default: 50×50 grid
       lambda_(lambda)/*,
       grad_(placement.numModules(), Point2<double>(0.0, 0.0))*/ {}
 
