@@ -67,7 +67,7 @@ void GlobalPlacer::place() {
     int bin_rows = 200;
     int bin_cols = 200;
 
-    Wirelength wirelength_(_placement, /*gamma=*/700.0);  // Wirelength function
+    Wirelength wirelength_(_placement, /*gamma=*/500.0);  // Wirelength function
     Density density_(_placement, /*bin_rows=*/bin_rows, /*bin_cols=*/bin_cols, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
     ObjectiveFunction obj(_placement, /*lambda=*/0.0000000001, wirelength_, density_);
 
@@ -150,7 +150,7 @@ void GlobalPlacer::place() {
 
 
             ////////////////////////////////////////////////////////////////////////////////////////
-            // Check if we have fixed and movable modules
+            // // Check if we have fixed and movable modules
             
             // system("mkdir -p plot_output");
             

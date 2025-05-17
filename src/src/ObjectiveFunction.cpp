@@ -443,72 +443,6 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
 }
 
 
-// backward function calculates the graident
-// const vector<Point2<double>> & Density::Backward()
-// {
-//     const size_t num_modules = placement_.numModules();
-
-//     // reset gradients
-//     for(auto &g : grad_)
-//     {
-//         g = Point2<double>(0.0, 0.0);
-//     }
-
-//     // iterate through all the cells
-//     for(size_t i = 0; i < num_modules; ++i)
-//     {
-//         Module &mod = placement_.module(i);
-//         if(mod.isFixed()) continue;
-
-//         const double area = mod.area();
-//         const double cx = input_[i].x;
-//         const double cy = input_[i].y;
-//         const double w = mod.width();
-//         const double h = mod.height();
-
-//         double influence_range_x = w * 2;
-//         double influence_range_y = h * 2;
-
-//         double x_min = cx - influence_range_x / 2;
-//         double x_max = cx + influence_range_x / 2;
-//         double y_min = cy - influence_range_y / 2;
-//         double y_max = cy + influence_range_y / 2;
-        
-        
-//         // map to specific grid(s)
-//         int bin_x_min = max(0, (int)((x_min - chip_left_) / bin_width_));
-//         int bin_x_max = min(bin_cols_ - 1, (int)((x_max - chip_left_) / (bin_width_)));
-//         int bin_y_min = max(0, (int)((y_min - chip_bottom_) / (bin_height_)));
-//         int bin_y_max = min(bin_rows_ - 1, (int)((y_max - chip_bottom_) / (bin_height_)));
-
-//         // calculate each cell's gradient contributed by each bin oevrlapping with the cell itself
-//         for (int by = bin_y_min; by <= bin_y_max; ++by) {
-//                 double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
-//                 double dy = bin_center_y - cy;
-//                 double sy = sigmoid(dy, -h/2, h/2);
-//                 double sy_deriv = sigmoid_derivative(dy, -h/2, h/2);
-
-//                 for (int bx = bin_x_min; bx <= bin_x_max; ++bx) {
-//                     double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
-//                     double dx = bin_center_x - cx;
-//                     double sx = sigmoid(dx, -w/2, w/2);
-//                     double sx_deriv = sigmoid_derivative(dx, -w/2, w/2);
-
-//                     double overflow = bin_density_[by][bx] - bin_capacity_;
-//                     overflow /= bin_capacity_; // normalize overflow
-//                     // cout << "overflow = " << overflow << endl;
-
-//                     grad_[i].x += 2.0 * overflow * area * sy * sx_deriv / bin_capacity_;
-//                     grad_[i].y += 2.0 * overflow * area * sx * sy_deriv / bin_capacity_;
-
-
-//                 }
-//             }
-//     }
-
-//     return grad_;
-
-// }
 
 const std::vector<Point2<double>> &Density::Backward() {
     const size_t num_modules = placement_.numModules();
@@ -517,82 +451,6 @@ const std::vector<Point2<double>> &Density::Backward() {
     for (auto &g : grad_)
         g = Point2<double>(0.0, 0.0);
 
-    // // 1. Compute average smoothed density
-    // double p_avg = 0.0;
-    // for (int by = 0; by < bin_rows_; ++by)
-    //     for (int bx = 0; bx < bin_cols_; ++bx)
-    //         p_avg += bin_density_[by][bx];
-    // p_avg /= (bin_rows_ * bin_cols_);
-
-    // // 2. Compute ∂L/∂density (with level smoothing)
-    // double delta = 0.5;
-    // std::vector<std::vector<double>> dL_dp(bin_rows_, std::vector<double>(bin_cols_, 0.0));
-    // for (int by = 0; by < bin_rows_; ++by) {
-    //     for (int bx = 0; bx < bin_cols_; ++bx) {
-    //         double p = bin_density_[by][bx];
-    //         double dpdp = 0.0;
-    //         if (p > p_avg)
-    //             dpdp = delta * std::pow(p - p_avg, delta - 1.0);
-    //         else if (p < p_avg)
-    //             dpdp = -delta * std::pow(p_avg - p, delta - 1.0);
-    //         else
-    //             dpdp = 0.0; // flat slope at average
-
-    //         double p_prime = (p >= p_avg)
-    //             ? p_avg + std::pow(p - p_avg, delta)
-    //             : p_avg - std::pow(p_avg - p, delta);
-    //         double overflow = (p_prime - bin_capacity_) / bin_capacity_;
-    //         dL_dp[by][bx] = 2.0 * overflow * dpdp / bin_capacity_;
-    //     }
-    // }
-
-    // // 3. Smooth gradient map with same Gaussian kernel as operator()
-    // applyGaussianSmoothing(dL_dp, /*kernel_size=*/12, /*sigma=*/2.0);
-
-    // // 4. Backpropagate to modules
-    // for (size_t i = 0; i < num_modules; ++i) {
-    //     Module &mod = placement_.module(i);
-    //     if (mod.isFixed()) continue;
-
-    //     double cx = input_[i].x;
-    //     double cy = input_[i].y;
-    //     double w = mod.width();
-    //     double h = mod.height();
-    //     double area = mod.area();
-
-    //     double influence_range_x = w * 2.0;
-    //     double influence_range_y = h * 2.0;
-
-    //     double x_min = cx - influence_range_x / 2.0;
-    //     double x_max = cx + influence_range_x / 2.0;
-    //     double y_min = cy - influence_range_y / 2.0;
-    //     double y_max = cy + influence_range_y / 2.0;
-
-    //     int bin_x_min = std::max(0, (int)((x_min - chip_left_) / bin_width_));
-    //     int bin_x_max = std::min(bin_cols_ - 1, (int)((x_max - chip_left_) / bin_width_));
-    //     int bin_y_min = std::max(0, (int)((y_min - chip_bottom_) / bin_height_));
-    //     int bin_y_max = std::min(bin_rows_ - 1, (int)((y_max - chip_bottom_) / bin_height_));
-
-    //     for (int by = bin_y_min; by <= bin_y_max; ++by) {
-    //         double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
-    //         double dy = bin_center_y - cy;
-    //         double sy = bell_shaped_potential(dy, h, bin_height_);
-    //         double dsy_dy = bell_shaped_potential_derivative(dy, h, bin_height_);
-
-    //         for (int bx = bin_x_min; bx <= bin_x_max; ++bx) {
-    //             double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
-    //             double dx = bin_center_x - cx;
-    //             double sx = bell_shaped_potential(dx, w, bin_width_);
-    //             double dsx_dx = bell_shaped_potential_derivative(dx, w, bin_width_);
-
-    //             double dL = dL_dp[by][bx];
-
-    //             grad_[i].x -= dL * sy * dsx_dx * area;
-    //             grad_[i].y -= dL * sx * dsy_dy * area;
-    //         }
-    //     }
-    // }
-    // return grad_;
 
     vector<vector<double>> normalized(bin_rows_, vector<double>(bin_cols_));
     for (int y = 0; y < bin_rows_; ++y) {
@@ -611,19 +469,6 @@ const std::vector<Point2<double>> &Density::Backward() {
         }
     }
     
-    
-    // double boundary_barrier = 10.0 * target_density_;
-    // for (int x = 0; x < bin_cols_; ++x) {
-    //     norm_density[0][x] += boundary_barrier;
-    //     norm_density[bin_rows_-1][x] += boundary_barrier;
-    // }
-    // for (int y = 0; y < bin_rows_; ++y) {
-    //     norm_density[y][0] += boundary_barrier;
-    //     norm_density[y][bin_cols_-1] += boundary_barrier;
-    // }
-
-
-    // 4. Backpropagate gradients to modules
     for (size_t i = 0; i < num_modules; ++i) {
         Module &mod = placement_.module(i);
         if (mod.isFixed()) continue;
@@ -667,6 +512,107 @@ const std::vector<Point2<double>> &Density::Backward() {
 
     return grad_;
 }
+
+
+
+
+// const std::vector<Point2<double>> &Density::Backward() {
+//     const size_t num_modules = placement_.numModules();
+
+//     // Reset gradients
+//     for (auto &g : grad_)
+//         g = Point2<double>(0.0, 0.0);
+
+
+//     vector<vector<double>> normalized(bin_rows_, vector<double>(bin_cols_));
+//     for (int y = 0; y < bin_rows_; ++y) {
+//         for (int x = 0; x < bin_cols_; ++x) {
+//             normalized[y][x] = norm_density[y][x] / target_density_;  // or target_density_
+//         }
+//     }
+
+//     std::vector<std::vector<std::pair<double, double>>> grad_map(bin_rows_, std::vector<std::pair<double, double>>(bin_cols_));
+
+
+//     for (int by = 0; by < bin_rows_; ++by) {
+//         double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
+//         for (int bx = 0; bx < bin_cols_; ++bx) {
+//             double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
+
+//             double dL_dD = 2.0 * (norm_density[by][bx] - target_density_);  // assuming L2 loss
+
+//             for (size_t v = 0; v < placement_.numModules(); ++v) {
+//                 Module &mod = placement_.module(v);
+//                 if (mod.isFixed()) continue;
+
+//                 double cx = input_[v].x;
+//                 double cy = input_[v].y;
+//                 double w = mod.width();
+//                 double h = mod.height();
+
+//                 double dx = bin_center_x - cx;
+//                 double dy = bin_center_y - cy;
+
+//                 double Px = bell_shaped_potential(dx, w, bin_width_);
+//                 double dPx = bell_shaped_potential_derivative(dx, w, bin_width_);
+
+//                 double Py = bell_shaped_potential(dy, h, bin_height_);
+//                 double dPy = bell_shaped_potential_derivative(dy, h, bin_height_);
+
+//                 // Skip if the influence is 0
+//                 if (Px == 0 && Py == 0) continue;
+
+//                 // Chain rule: ∂D/∂x = dPx * Py, ∂D/∂y = Px * dPy
+//                 grad_map[by][bx].first += dL_dD * dPx * Py;
+//                 grad_map[by][bx].second += dL_dD * Px * dPy;
+//             }
+//         }
+//     }
+
+    
+//     for (size_t i = 0; i < num_modules; ++i) {
+//         Module &mod = placement_.module(i);
+//         if (mod.isFixed()) continue;
+
+//         double cx = input_[i].x;
+//         double cy = input_[i].y;
+//         double w = mod.width();
+//         double h = mod.height();
+//         double area = mod.area();
+
+//         double influence_range_x = w * 4.0;
+//         double influence_range_y = h * 4.0;
+
+//         double x_min = cx - influence_range_x / 2.0;
+//         double x_max = cx + influence_range_x / 2.0;
+//         double y_min = cy - influence_range_y / 2.0;
+//         double y_max = cy + influence_range_y / 2.0;
+
+//         int bin_x_min = std::max(1, (int)((x_min - chip_left_) / bin_width_));
+//         int bin_x_max = std::min(bin_cols_ - 2, (int)((x_max - chip_left_) / bin_width_));
+//         int bin_y_min = std::max(1, (int)((y_min - chip_bottom_) / bin_height_));
+//         int bin_y_max = std::min(bin_rows_ - 2, (int)((y_max - chip_bottom_) / bin_height_));
+
+//         for (int by = bin_y_min; by <= bin_y_max; ++by) {
+//             double bin_center_y = chip_bottom_ + (by + 0.5) * bin_height_;
+//             double dy = bin_center_y - cy;
+//             double wy = bell_shaped_potential(dy, h, bin_height_);
+
+//             for (int bx = bin_x_min; bx <= bin_x_max; ++bx) {
+//                 double bin_center_x = chip_left_ + (bx + 0.5) * bin_width_;
+//                 double dx = bin_center_x - cx;
+//                 double wx = bell_shaped_potential(dx, w, bin_width_);
+
+//                 double weight = wx * wy;
+
+//                 grad_[i].x += weight * grad_map[by][bx].first * area;
+//                 grad_[i].y += weight * grad_map[by][bx].second * area;
+//             }
+//         }
+//     }
+
+//     return grad_;
+// }
 
 
 
