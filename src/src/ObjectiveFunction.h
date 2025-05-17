@@ -151,6 +151,8 @@ class Density : public BaseFunction {
         vector<vector<double>> norm_density;
         vector<vector<double>> p_prime_prime;
         vector<vector<double>> overflow_array;
+        vector<vector<double>> density_term_array;
+
 
         std::vector<Point2<double>> input_;            // Cached module positions
 

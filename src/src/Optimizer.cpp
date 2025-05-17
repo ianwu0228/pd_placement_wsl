@@ -91,8 +91,9 @@ void SimpleConjugateGradient::Step() {
     // chip width 60000 -> 120000 step size
     // chip width 2300 -> 4000 step size
     // ratio = 2
-    double s = 120000.0; // target average move distance (tunable)
-    // double s = ((boundary_right_ - boundary_left_) * 20); // target average move distance (tunable)
+    // double s = 4000.0; // target average move distance (tunable)
+    // cout << "boundary_left_ = " << boundary_left_ << ", boundary_right_ = " << boundary_right_ << endl;
+    double s = ((boundary_right_ - boundary_left_) * 2.3); // target average move distance (tunable)
     double norm = 0.0;
     for (size_t i = 0; i < kNumModule; ++i) {
         norm += dir[i].x * dir[i].x + dir[i].y * dir[i].y;

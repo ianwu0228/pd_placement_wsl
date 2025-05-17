@@ -401,6 +401,7 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
     norm_density.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
     p_prime_prime.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
     overflow_array.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
+    density_term_array.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
 
     // Normalize to [0, 1]
     // norm_density(bin_rows_, vector<double>(bin_cols_));
@@ -433,6 +434,7 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
             double overflow = (p_prime - target_density_);  // compare to target
             overflow_array[by][bx] = overflow;
             value_ += overflow * overflow;
+            density_term_array[by][bx] = overflow * overflow;
             // cout << "norm_density[" << by << "][" << bx << "] = " << norm_density[by][bx] << ", p_prime = " << p_prime << ", overflow = " << overflow << endl;
         }
     }
@@ -681,7 +683,7 @@ const double &ObjectiveFunction::operator()(const std::vector<Point2<double>> &i
         density_(input);                   // ensure internal input_ is set
         const double wl = wirelength_.value();
         const double dp = density_.value();
-        cout << "wl: " << wl << ", dp: " << dp << std::endl;
+        // cout << "wl: " << wl << ", dp: " << dp << std::endl;
         value_ = wl + lambda_ * dp;
         return value_;
 }
