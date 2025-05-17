@@ -88,7 +88,11 @@ void SimpleConjugateGradient::Step() {
     // TODO(Optional): Change to dynamic step-size control
 
     // === Dynamic Step-Size ===
-    double s = 20000.0; // target average move distance (tunable)
+    // chip width 60000 -> 120000 step size
+    // chip width 2300 -> 4000 step size
+    // ratio = 2
+    double s = 120000.0; // target average move distance (tunable)
+    // double s = ((boundary_right_ - boundary_left_) * 20); // target average move distance (tunable)
     double norm = 0.0;
     for (size_t i = 0; i < kNumModule; ++i) {
         norm += dir[i].x * dir[i].x + dir[i].y * dir[i].y;
@@ -107,8 +111,16 @@ void SimpleConjugateGradient::Step() {
         var_[i] = var_[i] + alpha_ * dir[i]; 
         // Point2<double> new_pos = var_[i]; 
  
-            // var_[i].x = max(boundary_left_ ,  min(var_[i].x, boundary_right_));
-            // var_[i].y = max(boundary_bottom_, min(var_[i].y, boundary_top_));
+        // var_[i].x = max(boundary_left_ ,  min(var_[i].x, boundary_right_));
+        // var_[i].y = max(boundary_bottom_, min(var_[i].y, boundary_top_));
+        // if(var_[i].x < boundary_left_)
+        //     var_[i].x = boundary_left_;
+        // else if(var_[i].x > boundary_right_)
+        //     var_[i].x = boundary_right_;
+        // if(var_[i].y < boundary_bottom_)
+        //     var_[i].y = boundary_bottom_;
+        // else if(var_[i].y > boundary_top_)
+        //     var_[i].y = boundary_top_;
 
 
     }

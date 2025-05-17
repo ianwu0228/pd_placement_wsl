@@ -149,6 +149,8 @@ class Density : public BaseFunction {
 
         std::vector<std::vector<double>> bin_density_; // Smoothed density per bin
         vector<vector<double>> norm_density;
+        vector<vector<double>> p_prime_prime;
+        vector<vector<double>> overflow_array;
 
         std::vector<Point2<double>> input_;            // Cached module positions
 

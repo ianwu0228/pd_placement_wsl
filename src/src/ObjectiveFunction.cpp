@@ -399,6 +399,9 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
     double epsilon = 1e-8;
     double range = max(p_max - p_min, epsilon);
     norm_density.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
+    p_prime_prime.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
+    overflow_array.resize(bin_rows_, std::vector<double>(bin_cols_, 0.0));
+
     // Normalize to [0, 1]
     // norm_density(bin_rows_, vector<double>(bin_cols_));
     for (int by = 0; by < bin_rows_; ++by)
@@ -426,8 +429,11 @@ const double& Density::operator()(const std::vector<Point2<double>> &input) {
             else
                 p_prime = p_avg - pow(p_avg - p, delta_for_smoothing_);
 
-            double overflow = (p_prime - target_density_) / target_density_;  // compare to target
+            p_prime_prime[by][bx] = p_prime;
+            double overflow = (p_prime - target_density_);  // compare to target
+            overflow_array[by][bx] = overflow;
             value_ += overflow * overflow;
+            // cout << "norm_density[" << by << "][" << bx << "] = " << norm_density[by][bx] << ", p_prime = " << p_prime << ", overflow = " << overflow << endl;
         }
     }
 
@@ -586,6 +592,13 @@ const std::vector<Point2<double>> &Density::Backward() {
     // }
     // return grad_;
 
+    vector<vector<double>> normalized(bin_rows_, vector<double>(bin_cols_));
+    for (int y = 0; y < bin_rows_; ++y) {
+        for (int x = 0; x < bin_cols_; ++x) {
+            normalized[y][x] = norm_density[y][x] / target_density_;  // or target_density_
+        }
+    }
+
     std::vector<std::vector<std::pair<double, double>>> grad_map(bin_rows_, std::vector<std::pair<double, double>>(bin_cols_));
 
     for (int y = 1; y < bin_rows_ - 1; ++y) {
@@ -595,6 +608,18 @@ const std::vector<Point2<double>> &Density::Backward() {
             grad_map[y][x] = {dx, dy};
         }
     }
+    
+    
+    // double boundary_barrier = 10.0 * target_density_;
+    // for (int x = 0; x < bin_cols_; ++x) {
+    //     norm_density[0][x] += boundary_barrier;
+    //     norm_density[bin_rows_-1][x] += boundary_barrier;
+    // }
+    // for (int y = 0; y < bin_rows_; ++y) {
+    //     norm_density[y][0] += boundary_barrier;
+    //     norm_density[y][bin_cols_-1] += boundary_barrier;
+    // }
+
 
     // 4. Backpropagate gradients to modules
     for (size_t i = 0; i < num_modules; ++i) {
@@ -607,8 +632,8 @@ const std::vector<Point2<double>> &Density::Backward() {
         double h = mod.height();
         double area = mod.area();
 
-        double influence_range_x = w * 2.0;
-        double influence_range_y = h * 2.0;
+        double influence_range_x = w * 4.0;
+        double influence_range_y = h * 4.0;
 
         double x_min = cx - influence_range_x / 2.0;
         double x_max = cx + influence_range_x / 2.0;

@@ -67,7 +67,7 @@ void GlobalPlacer::place() {
     int bin_rows = 200;
     int bin_cols = 200;
 
-    Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
+    Wirelength wirelength_(_placement, /*gamma=*/700.0);  // Wirelength function
     Density density_(_placement, /*bin_rows=*/bin_rows, /*bin_cols=*/bin_cols, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
     ObjectiveFunction obj(_placement, /*lambda=*/0.0000000001, wirelength_, density_);
 
@@ -93,13 +93,13 @@ void GlobalPlacer::place() {
     //     //plot the density during the optimization
 
     // }
-    double init_lambda = 0.000000001;
+    double init_lambda = 0.0000000001;
     double lambda = init_lambda;
     int i = -1;
     do{
         i++;
         lambda *= 2;
-        obj.setLambda(max(lambda, init_lambda * 10000));
+        obj.setLambda(max(lambda, init_lambda * 4000));
         double min_density = std::numeric_limits<double>::max();
         double max_density = std::numeric_limits<double>::lowest();
         vector<vector<double>> bin_density = density_.getBinDensity();
