@@ -1,15 +1,27 @@
 #include "Optimizer.h"
-
+#include <iostream>
 #include <cmath>
+#include <fstream>   // for std::ofstream
+#include <vector>    // for std::vector
+#include <string>    // for std::string (if you use file paths with std::string)
 
 SimpleConjugateGradient::SimpleConjugateGradient(BaseFunction &obj,
                                                  std::vector<Point2<double>> &var,
-                                                 const double &alpha)
-    : BaseOptimizer(obj, var),
-      grad_prev_(var.size()),
-      dir_prev_(var.size()),
-      step_(0),
-      alpha_(alpha) {}
+                                                 const double &alpha,
+                                                 double boundary_left,
+                                                 double boundary_right,
+                                                 double boundary_top,
+                                                 double boundary_bottom)
+        : BaseOptimizer(obj, var),
+        grad_prev_(var.size()),
+        dir_prev_(var.size()),
+        step_(0),
+        alpha_(alpha) {
+        boundary_left_ = boundary_left;
+        boundary_right_ = boundary_right;
+        boundary_top_ = boundary_top;
+        boundary_bottom_ = boundary_bottom;
+    }
 
 void SimpleConjugateGradient::Initialize() {
     // Before the optimization starts, we need to initialize the optimizer.
@@ -27,6 +39,17 @@ void SimpleConjugateGradient::Step() {
     obj_.Backward();  // Backward, compute the gradient according to the cache
     // cout << "obj value: " << obj_.value() << endl; 
 
+    std::ofstream grad_file("plot_output/grad_vectors.txt");
+
+    for (size_t i = 0; i < var_.size(); ++i) {
+        const auto &pos = var_[i];
+        const auto &g = obj_.grad()[i];
+        double mag = std::sqrt(g.x * g.x + g.y * g.y);
+        grad_file << pos.x << " " << pos.y << " " << -g.x << " " << -g.y << " " << mag << "\n";
+    }
+
+
+    grad_file.close();
     // Compute the Polak-Ribiere coefficient and conjugate directions
     double beta;                                  // Polak-Ribiere coefficient
     std::vector<Point2<double>> dir(kNumModule);  // conjugate directions
@@ -57,8 +80,7 @@ void SimpleConjugateGradient::Step() {
 
         for (size_t i = 0; i < kNumModule; ++i) {
             dir[i] = -obj_.grad().at(i) + beta * dir_prev_.at(i);
-            // cout << "onj_.grad().at(i) (x, y) = " << obj_.grad().at(i).x <<  obj_.grad().at(i).y << endl;
-            // cout << "dir[" << i << "], dir.x =  " << dir[i].x << "dir.y = " << dir[i].y << endl; 
+
         }
     }
 
@@ -66,7 +88,7 @@ void SimpleConjugateGradient::Step() {
     // TODO(Optional): Change to dynamic step-size control
 
     // === Dynamic Step-Size ===
-    double s = 10000.0; // target average move distance (tunable)
+    double s = 20000.0; // target average move distance (tunable)
     double norm = 0.0;
     for (size_t i = 0; i < kNumModule; ++i) {
         norm += dir[i].x * dir[i].x + dir[i].y * dir[i].y;
@@ -81,12 +103,14 @@ void SimpleConjugateGradient::Step() {
     // Update the solution
     // Please be aware of the updating directions, i.e., the sign for each term.
     for (size_t i = 0; i < kNumModule; ++i) {
-        Point2<double> ori = var_[i]; // Store the current position
-        var_[i] = var_[i] + alpha_ * dir[i]; //supports operator overloading, updates x and y at the same time
-        Point2<double> new_pos = var_[i]; // Store the new position
-        // cout << "dir[i]: " << dir[i].x << ", " << dir[i].y << endl;
-        // cout << "Module " << i << ": (" << ori.x << ", " << ori.y << ") -> ("
-        //      << new_pos.x << ", " << new_pos.y << ")" << endl;
+        // Point2<double> ori = var_[i]; 
+        var_[i] = var_[i] + alpha_ * dir[i]; 
+        // Point2<double> new_pos = var_[i]; 
+ 
+            // var_[i].x = max(boundary_left_ ,  min(var_[i].x, boundary_right_));
+            // var_[i].y = max(boundary_bottom_, min(var_[i].y, boundary_top_));
+
+
     }
 
     // Update the cache data members

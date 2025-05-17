@@ -121,7 +121,7 @@ class Wirelength : public BaseFunction {
 
 class Density : public BaseFunction {
     public:
-        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double alpha = 2, double target_density = 0.9);
+        Density(Placement &placement, int bin_rows = 50, int bin_cols = 50, double alpha = 10, double target_density = 0.9);
 
 
         
@@ -133,6 +133,8 @@ class Density : public BaseFunction {
 
         // Optional: expose smoothing trigger
         void smoothBinDensityLevel(int smoothing_pass = 1);
+        void setSmoothingDelta(double delta) { delta_for_smoothing_ = delta; }
+        double getSmoothingDelta()  { return delta_for_smoothing_; }
 
     private:
         Placement &placement_;
@@ -143,13 +145,21 @@ class Density : public BaseFunction {
         double alpha_;                  // Alpha for sigmoid steepness
         double target_density_;
         double bin_capacity_;
+        double delta_for_smoothing_; // Delta for smoothing
 
         std::vector<std::vector<double>> bin_density_; // Smoothed density per bin
+        vector<vector<double>> norm_density;
+
         std::vector<Point2<double>> input_;            // Cached module positions
 
         // Sigmoid function used for smoothing density influence
         double sigmoid(double d, double lower, double upper) const;
         double sigmoid_derivative(double d, double lowwer, double upper) const;
+        double bell_shaped_potential(double dx, double wv, double wb);
+        void applyGaussianSmoothing(vector<vector<double>> &density, int size, double sigma); // size is the size of the kernel. sigma is the standard deviation of the Gaussian
+        vector<vector<double>> generateGaussianKernel(int size, double sigma);
+        double bell_shaped_potential_derivative(double dx, double wv, double wb);
+
 
 };
 

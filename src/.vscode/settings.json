@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "ostream": "cpp"
+        "*.rmd": "markdown",
+        "ostream": "cpp",
+        "limits": "cpp"
     }
 }

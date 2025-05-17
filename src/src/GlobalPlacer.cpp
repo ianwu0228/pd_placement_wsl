@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <vector>
 #include <set>
+#include <algorithm>
 
 #include "ObjectiveFunction.h"
 #include "Optimizer.h"
@@ -36,8 +37,8 @@ void GlobalPlacer::place() {
     std::mt19937 gen(rd());
 
     // Create small random offsets (±5% of chip size around center)
-    double offset_x = (_placement.boundryRight() - _placement.boundryLeft()) * 0.005;  // 5% of chip width
-    double offset_y = (_placement.boundryTop() - _placement.boundryBottom())* 0.005;    // 5% of chip height
+    double offset_x = (_placement.boundryRight() - _placement.boundryLeft()) * 0.05;  // 5% of chip width
+    double offset_y = (_placement.boundryTop() - _placement.boundryBottom())* 0.05;    // 5% of chip height
     std::uniform_real_distribution<> dis_x(-offset_x, offset_x);
     std::uniform_real_distribution<> dis_y(-offset_y, offset_y);
 
@@ -61,12 +62,14 @@ void GlobalPlacer::place() {
    
 
     // int bin_rows, bin_cols = (int)((_placement.boundryRight() - _placement.boundryLeft())/3); // 800 for ibm05
-    int bin_rows = (int)((_placement.boundryRight() - _placement.boundryLeft())/3);
-    int bin_cols = (int)((_placement.boundryRight() - _placement.boundryLeft())/3); 
+    // int bin_rows = (int)((_placement.boundryRight() - _placement.boundryLeft())/3);
+    // int bin_cols = (int)((_placement.boundryRight() - _placement.boundryLeft())/3); 
+    int bin_rows = 200;
+    int bin_cols = 200;
 
     Wirelength wirelength_(_placement, /*gamma=*/5000.0);  // Wirelength function
     Density density_(_placement, /*bin_rows=*/bin_rows, /*bin_cols=*/bin_cols, /*sigma_factor=*/1.5, /*target_density=*/0.9);  // Density function
-    ObjectiveFunction obj(_placement, /*lambda=*/0.001, wirelength_, density_);
+    ObjectiveFunction obj(_placement, /*lambda=*/0.0000000001, wirelength_, density_);
 
     const double kAlpha = 5;                         // Constant step size
     SimpleConjugateGradient optimizer(obj, t, kAlpha);  // Optimizer
@@ -90,21 +93,21 @@ void GlobalPlacer::place() {
     //     //plot the density during the optimization
 
     // }
-    for (size_t i = 0; i < 100; ++i) {
-        
-        
+    double init_lambda = 0.000000001;
+    double lambda = init_lambda;
+    int i = -1;
+    do{
+        i++;
+        lambda *= 2;
+        obj.setLambda(max(lambda, init_lambda * 10000));
+        double min_density = std::numeric_limits<double>::max();
+        double max_density = std::numeric_limits<double>::lowest();
         vector<vector<double>> bin_density = density_.getBinDensity();
-        if (i % 10 == 0) {
+        if (i % 1 == 0) {
             // Create output directory
 
-
-            
-            ///////////////////////////////////////////////////////////////////////////////////////
             int bin_rows = bin_density.size();
             int bin_cols = bin_density[0].size();
-
-            double min_density = std::numeric_limits<double>::max();
-            double max_density = std::numeric_limits<double>::lowest();
 
             // Histogram bins
             int count_0_05 = 0, count_05_1 = 0, count_1_15 = 0, count_15_2 = 0;
@@ -131,114 +134,19 @@ void GlobalPlacer::place() {
                 }
             }
             cout << "Density Histogram:" << endl;
-            cout << "  [0.0 ~ 0.5)    : " << count_0_05 << " bins" << endl;
-            cout << "  [0.5 ~ 1.0)    : " << count_05_1 << " bins" << endl;
-            cout << "  [1.0 ~ 1.5)    : " << count_1_15 << " bins" << endl;
-            cout << "  [1.5 ~ 2.0)    : " << count_15_2 << " bins" << endl;
-            cout << "  [2.0 ~ 10.0)   : " << count_2_10 << " bins" << endl;
-            cout << "  [10.0 ~ 20.0)  : " << count_10_20 << " bins" << endl;
-            cout << "  [20.0 ~ 50.0)  : " << count_20_50 << " bins" << endl;
-            cout << "  [50.0 ~ 100.0) : " << count_50_100 << " bins" << endl;
-            cout << "  [>100.0]       : " << count_over_100 << " bins" << endl;
-            cout << "Min density      : " << min_density << endl;
+            // cout << "  [0.0 ~ 0.5)    : " << count_0_05 << " bins" << endl;
+            // cout << "  [0.5 ~ 1.0)    : " << count_05_1 << " bins" << endl;
+            // cout << "  [1.0 ~ 1.5)    : " << count_1_15 << " bins" << endl;
+            // cout << "  [1.5 ~ 2.0)    : " << count_15_2 << " bins" << endl;
+            // cout << "  [2.0 ~ 10.0)   : " << count_2_10 << " bins" << endl;
+            // cout << "  [10.0 ~ 20.0)  : " << count_10_20 << " bins" << endl;
+            // cout << "  [20.0 ~ 50.0)  : " << count_20_50 << " bins" << endl;
+            // cout << "  [50.0 ~ 100.0) : " << count_50_100 << " bins" << endl;
+            // cout << "  [>100.0]       : " << count_over_100 << " bins" << endl;
+            // cout << "Min density      : " << min_density << endl;
             cout << "Max density      : " << max_density << endl;
+            cout << "wirelength = " << wirelength_(t) << endl;
 
-
-            // ///////////////////////////////////////////////////////////////////////////////////////
-
-            // system("mkdir -p plot_output");
-            
-            // ////////////////////////////////// Density Map Plot //////////////////////////////////
-            // string densityname = "plot_output/density_" + std::to_string(i) + ".plt";
-            // string densitypng = "plot_output/density_" + std::to_string(i) + ".png";
-            
-            // ofstream densityfile(densityname.c_str(), ios::out);
-            // densityfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
-            // densityfile << "set output '" << densitypng << "'" << endl;
-            // densityfile << "set title \"Density Map - Iteration " << i << "\"" << endl;
-            // densityfile << "set view map" << endl;
-            // densityfile << "set size ratio 1" << endl;
-            // densityfile << "unset key" << endl;
-            // densityfile << "set palette defined (0 'white', 0.5 'yellow', 1 'red', 2 'dark-red')" << endl;
-            // densityfile << "set cbrange [0:2]" << endl;
-            // densityfile << "set cblabel 'Density'" << endl;
-            // densityfile << "set xrange [0:" << bin_density[0].size()-1 << "]" << endl;
-            // densityfile << "set yrange [0:" << bin_density.size()-1 << "]" << endl;
-
-            
-        
-            // densityfile << "set pm3d map" << endl;
-            // densityfile << "splot '-' using 1:2:3 notitle" << endl;
-
-            // for (size_t y = 0; y < bin_density.size(); ++y) {
-            //     for (size_t x = 0; x < bin_density[y].size(); ++x) {
-            //         densityfile << x << " " << y << " " << bin_density[y][x] << endl;
-            //     }
-            //     densityfile << endl;
-            // }
-            // densityfile << "e" << endl;
-
-            // densityfile.close();
-            
-            // ////////////////////////////////// Cell Distribution Plot //////////////////////////////////
-            // string cellname = "plot_output/cells_" + std::to_string(i) + ".plt";
-            // string cellpng = "plot_output/cells_" + std::to_string(i) + ".png";
-            
-            // ofstream cellfile(cellname.c_str(), ios::out);
-            // cellfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
-            // cellfile << "set output '" << cellpng << "'" << endl;
-            // cellfile << "set title \"Cell Distribution - Iteration " << i 
-            //         << "\\nWL = " << wirelength_(t) << ", DP = " << density_(t) << "\"" << endl;
-            // cellfile << "set size ratio 1" << endl;
-            // cellfile << "set xrange [" << _placement.boundryLeft() << ":" 
-            //         << _placement.boundryRight() << "]" << endl;
-            // cellfile << "set yrange [" << _placement.boundryBottom() << ":" 
-            //         << _placement.boundryTop() << "]" << endl;
-            
-            // // Set point styles
-            // cellfile << "set style line 1 lc rgb 'red' pt 7 ps 0.3" << endl;
-            // cellfile << "set style line 2 lc rgb 'blue' pt 7 ps 0.3" << endl;
-            // cellfile << "set style line 3 lc rgb 'black' lt 1 lw 2" << endl;
-            
-            // // Plot command
-            // cellfile << "plot '-' w p ls 1 title 'Fixed', "
-            //         << "     '-' w p ls 2 title 'Movable', "
-            //         << "     '-' w l ls 3 title 'Boundary'" << endl;
-            
-            // // Plot fixed modules
-            // for (size_t j = 0; j < t.size(); ++j) {
-            //     if (_placement.module(j).isFixed()) {
-            //         cellfile << t[j].x << " " << t[j].y << endl;
-            //     }
-            // }
-            // cellfile << "e" << endl;
-            
-            // // Plot movable modules
-            // for (size_t j = 0; j < t.size(); ++j) {
-            //     if (!_placement.module(j).isFixed()) {
-            //         cellfile << t[j].x << " " << t[j].y << endl;
-            //     }
-            // }
-            // cellfile << "e" << endl;
-            
-            // // Plot boundary
-            // plotBoxPLT(cellfile, _placement.boundryLeft(), _placement.boundryBottom(), 
-            //         _placement.boundryRight(), _placement.boundryTop());
-            // cellfile << "e" << endl;
-            // cellfile.close();
-
-            // // Execute gnuplot
-            // char cmd[256];
-            // sprintf(cmd, "gnuplot %s %s", densityname.c_str(), cellname.c_str());
-            // system(cmd);
-
-            // // Combine the two plots side by side
-            // sprintf(cmd, "convert +append %s %s plot_output/combined_%zu.png", 
-            //         densitypng.c_str(), cellpng.c_str(), i);
-            // system(cmd);
-
-            // printf("Generated plots for iteration %zu\n", i);
-            ///////////////////////////////////////////////////////////////////////////////////////
 
 
             ////////////////////////////////////////////////////////////////////////////////////////
@@ -362,14 +270,10 @@ void GlobalPlacer::place() {
         }
 
         optimizer.Step();
+        density_.setSmoothingDelta(max(1.0,  density_.getSmoothingDelta() * 0.9));
+        if(i != 0 && max_density < 15) break;
         
-        // Get current density map
-
-       
-
-
-        
-    }
+    }while(true);
 
     ////////////////////////////////////////////////////////////////////
     // Global placement algorithm
@@ -383,6 +287,7 @@ void GlobalPlacer::place() {
     // Write the placement result into the database. (You may modify this part.)
     ////////////////////////////////////////////////////////////////////
     size_t fixed_cnt = 0;
+    int num_in_chip_boundary = 0;
     for (size_t i = 0; i < num_modules; i++) {
         // If the module is fixed, its position should not be changed.
         // In this programing assignment, a fixed module may be a terminal or a pre-placed module.
@@ -390,8 +295,21 @@ void GlobalPlacer::place() {
             fixed_cnt++;
             continue;
         }
-        _placement.module(i).setPosition(t[i].x, t[i].y);
 
+        if(t[i].x < _placement.boundryLeft() || t[i].x > _placement.boundryRight() ||
+           t[i].y < _placement.boundryBottom() || t[i].y > _placement.boundryTop()) {
+            num_in_chip_boundary++;
+        }
+
+
+        // clamp the position of the module to the chip boundary
+        t[i].x = max(_placement.boundryLeft() ,  min(t[i].x, _placement.boundryRight()));
+        t[i].y = max(_placement.boundryBottom(), min(t[i].y, _placement.boundryTop()));
+
+
+        _placement.module(i).setPosition(t[i].x, t[i].y);
+        
+        
 
         // /////////////////////////////////// random placement start ///////////////////////
         // std::random_device rd;
@@ -420,7 +338,7 @@ void GlobalPlacer::place() {
         // cout << _placement.module(i).name() << " (" << _placement.module(i).centerX() << ", " << _placement.module(i).centerY() << ")" << endl;
     }
     printf("INFO: %lu / %lu modules are fixed.\n", fixed_cnt, num_modules);
-
+    cout << "INFO: " << num_in_chip_boundary << " modules are out of chip boundary." << endl;
 
 
 }

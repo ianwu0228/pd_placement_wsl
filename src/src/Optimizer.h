@@ -9,33 +9,37 @@
  * @brief Base class for optimizers
  */
 class BaseOptimizer {
-   public:
-    /////////////////////////////////
-    // Constructors
-    /////////////////////////////////
+    public:
+        /////////////////////////////////
+        // Constructors
+        /////////////////////////////////
 
-    BaseOptimizer(BaseFunction &obj, std::vector<Point2<double>> &var)
-        : obj_(obj), var_(var) {}
+        BaseOptimizer(BaseFunction &obj, std::vector<Point2<double>> &var)
+            : obj_(obj), var_(var) {}
 
-    /////////////////////////////////
-    // Methods
-    /////////////////////////////////
+        /////////////////////////////////
+        // Methods
+        /////////////////////////////////
 
-    // Initialize the optimizer, e.g., do some calculation for the first step.
-    virtual void Initialize() = 0;
+        // Initialize the optimizer, e.g., do some calculation for the first step.
+        virtual void Initialize() = 0;
 
-    // Perform one optimization step
-    // For example, update var_ based on the gradient of obj_:
-    //     var_ = var_ - learning_rate * obj_.grad();
-    virtual void Step() = 0;
+        // Perform one optimization step
+        // For example, update var_ based on the gradient of obj_:
+        //     var_ = var_ - learning_rate * obj_.grad();
+        virtual void Step() = 0;
 
-   protected:
-    /////////////////////////////////
-    // Data members
-    /////////////////////////////////
+    protected:
+        /////////////////////////////////
+        // Data members
+        /////////////////////////////////
+        double boundary_left_;  // Left boundary of the placement area
+        double boundary_right_; // Right boundary of the placement area
+        double boundary_top_;   // Top boundary of the placement area
+        double boundary_bottom_; // Bottom boundary of the placement area
 
-    BaseFunction &obj_;                 // Objective function to optimize
-    std::vector<Point2<double>> &var_;  // Variables to optimize
+        BaseFunction &obj_;                 // Objective function to optimize
+        std::vector<Point2<double>> &var_;  // Variables to optimize
 };
 
 /**
@@ -47,7 +51,8 @@ class SimpleConjugateGradient : public BaseOptimizer {
     // Constructors
     /////////////////////////////////
 
-    SimpleConjugateGradient(BaseFunction &obj, std::vector<Point2<double>> &var, const double &alpha);
+    SimpleConjugateGradient(BaseFunction &obj, std::vector<Point2<double>> &var, const double &alpha, double boundary_left = 0, double boundary_right = 0, double boundary_top = 0, double boundary_bottom = 0);
+
 
     /////////////////////////////////
     // Methods
@@ -64,6 +69,7 @@ class SimpleConjugateGradient : public BaseOptimizer {
     /////////////////////////////////
     // Data members
     /////////////////////////////////
+   
 
     std::vector<Point2<double>> grad_prev_;  // Gradient of the objective function at the previous
                                              // step, i.e., g_{k-1} in the NTUPlace3 paper
