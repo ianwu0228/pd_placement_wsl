@@ -124,15 +124,15 @@ void GlobalPlacer::place(bool rand_place) {
                         max_density = std::max(max_density, d);
 
                         // Histogram classification
-                        if (d < 0.5) count_0_05++;
-                        else if (d < 1.0) count_05_1++;
-                        else if (d < 1.5) count_1_15++;
-                        else if (d < 2.0) count_15_2++;
-                        else if (d < 10.0) count_2_10++;
-                        else if (d < 20.0) count_10_20++;
-                        else if (d < 50.0) count_20_50++;
-                        else if (d < 100.0) count_50_100++;
-                        else count_over_100++;
+                        // if (d < 0.5) count_0_05++;
+                        // else if (d < 1.0) count_05_1++;
+                        // else if (d < 1.5) count_1_15++;
+                        // else if (d < 2.0) count_15_2++;
+                        // else if (d < 10.0) count_2_10++;
+                        // else if (d < 20.0) count_10_20++;
+                        // else if (d < 50.0) count_20_50++;
+                        // else if (d < 100.0) count_50_100++;
+                        // else count_over_100++;
                     }
                 }
                 // cout << "Density Histogram:" << endl;
@@ -153,120 +153,120 @@ void GlobalPlacer::place(bool rand_place) {
                 ////////////////////////////////////////////////////////////////////////////////////////
                 // Check if we have fixed and movable modules
                 
-                // system("mkdir -p plot_output");
+                system("mkdir -p plot_output");
                 
-                // ////////////////////////////////// Density Map Plot //////////////////////////////////
-                // string densityname = "plot_output/density_" + std::to_string(i) + ".plt";
-                // string densitypng = "plot_output/density_" + std::to_string(i) + ".png";
+                ////////////////////////////////// Density Map Plot //////////////////////////////////
+                string densityname = "plot_output/density_" + std::to_string(i) + ".plt";
+                string densitypng = "plot_output/density_" + std::to_string(i) + ".png";
                 
-                // ofstream densityfile(densityname.c_str(), ios::out);
-                // densityfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
-                // densityfile << "set output '" << densitypng << "'" << endl;
-                // densityfile << "set title \"Density Map - Iteration " << i << "\"" << endl;
-                // densityfile << "set view map" << endl;
-                // densityfile << "set size ratio 1" << endl;
-                // densityfile << "unset key" << endl;
-                // densityfile << "set palette defined (0 'white', 0.5 'yellow', 1 'red', 2 'dark-red')" << endl;
-                // densityfile << "set cbrange [0:2]" << endl;
-                // densityfile << "set cblabel 'Density'" << endl;
-                // densityfile << "set xrange [0:" << bin_density[0].size()-1 << "]" << endl;
-                // densityfile << "set yrange [0:" << bin_density.size()-1 << "]" << endl;
+                ofstream densityfile(densityname.c_str(), ios::out);
+                densityfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
+                densityfile << "set output '" << densitypng << "'" << endl;
+                densityfile << "set title \"Density Map - Iteration " << i << "\"" << endl;
+                densityfile << "set view map" << endl;
+                densityfile << "set size ratio 1" << endl;
+                densityfile << "unset key" << endl;
+                densityfile << "set palette defined (0 'white', 0.5 'yellow', 1 'red', 2 'dark-red')" << endl;
+                densityfile << "set cbrange [0:2]" << endl;
+                densityfile << "set cblabel 'Density'" << endl;
+                densityfile << "set xrange [0:" << bin_density[0].size()-1 << "]" << endl;
+                densityfile << "set yrange [0:" << bin_density.size()-1 << "]" << endl;
 
                 
             
-                // densityfile << "set pm3d map" << endl;
-                // densityfile << "splot '-' using 1:2:3 notitle" << endl;
+                densityfile << "set pm3d map" << endl;
+                densityfile << "splot '-' using 1:2:3 notitle" << endl;
 
-                // for (size_t y = 0; y < bin_density.size(); ++y) {
-                //     for (size_t x = 0; x < bin_density[y].size(); ++x) {
-                //         densityfile << x << " " << y << " " << bin_density[y][x] << endl;
-                //     }
-                //     densityfile << endl;
-                // }
-                // densityfile << "e" << endl;
+                for (size_t y = 0; y < bin_density.size(); ++y) {
+                    for (size_t x = 0; x < bin_density[y].size(); ++x) {
+                        densityfile << x << " " << y << " " << bin_density[y][x] << endl;
+                    }
+                    densityfile << endl;
+                }
+                densityfile << "e" << endl;
 
-                // densityfile.close();
+                densityfile.close();
                 
-                // bool hasFixed = false;
-                // bool hasMovable = false;
-                // for (size_t j = 0; j < t.size(); ++j) {
-                //     if (_placement.module(j).isFixed()) {
-                //         hasFixed = true;
-                //     } else {
-                //         hasMovable = true;
-                //     }
-                //     if (hasFixed && hasMovable) break;
-                // }
+                bool hasFixed = false;
+                bool hasMovable = false;
+                for (size_t j = 0; j < t.size(); ++j) {
+                    if (_placement.module(j).isFixed()) {
+                        hasFixed = true;
+                    } else {
+                        hasMovable = true;
+                    }
+                    if (hasFixed && hasMovable) break;
+                }
 
-                // // Cell Distribution Plot
-                // string cellname = "plot_output/cells_" + std::to_string(i) + ".plt";
-                // string cellpng = "plot_output/cells_" + std::to_string(i) + ".png";
+                // Cell Distribution Plot
+                string cellname = "plot_output/cells_" + std::to_string(i) + ".plt";
+                string cellpng = "plot_output/cells_" + std::to_string(i) + ".png";
 
-                // ofstream cellfile(cellname.c_str(), ios::out);
-                // cellfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
-                // cellfile << "set output '" << cellpng << "'" << endl;
-                // cellfile << "set title \"Cell Distribution - Iteration " << i 
-                //         << "\\nWL = " << wirelength_(t) << ", DP = " << density_(t) << "\"" << endl;
-                // cellfile << "set size ratio 1" << endl;
-                // cellfile << "set xrange [" << _placement.boundryLeft() << ":" 
-                //         << _placement.boundryRight() << "]" << endl;
-                // cellfile << "set yrange [" << _placement.boundryBottom() << ":" 
-                //         << _placement.boundryTop() << "]" << endl;
+                ofstream cellfile(cellname.c_str(), ios::out);
+                cellfile << "set terminal png size 800,800 enhanced font 'Arial,12'" << endl;
+                cellfile << "set output '" << cellpng << "'" << endl;
+                cellfile << "set title \"Cell Distribution - Iteration " << i 
+                        << "\\nWL = " << wirelength_(t) << ", DP = " << density_(t) << "\"" << endl;
+                cellfile << "set size ratio 1" << endl;
+                cellfile << "set xrange [" << _placement.boundryLeft() << ":" 
+                        << _placement.boundryRight() << "]" << endl;
+                cellfile << "set yrange [" << _placement.boundryBottom() << ":" 
+                        << _placement.boundryTop() << "]" << endl;
 
-                // // Set point styles
-                // cellfile << "set style line 1 lc rgb 'red' pt 7 ps 0.3" << endl;
-                // cellfile << "set style line 2 lc rgb 'blue' pt 7 ps 0.3" << endl;
-                // cellfile << "set style line 3 lc rgb 'black' lt 1 lw 2" << endl;
+                // Set point styles
+                cellfile << "set style line 1 lc rgb 'red' pt 7 ps 0.3" << endl;
+                cellfile << "set style line 2 lc rgb 'blue' pt 7 ps 0.3" << endl;
+                cellfile << "set style line 3 lc rgb 'black' lt 1 lw 2" << endl;
 
-                // // Construct plot command based on what types of modules exist
-                // string plotCmd = "plot ";
-                // if (hasFixed) {
-                //     plotCmd += "'-' w p ls 1 title 'Fixed'";
-                //     if (hasMovable) plotCmd += ", ";
-                // }
-                // if (hasMovable) {
-                //     plotCmd += "'-' w p ls 2 title 'Movable'";
-                // }
-                // plotCmd += ", '-' w l ls 3 title 'Boundary'";
-                // cellfile << plotCmd << endl;
+                // Construct plot command based on what types of modules exist
+                string plotCmd = "plot ";
+                if (hasFixed) {
+                    plotCmd += "'-' w p ls 1 title 'Fixed'";
+                    if (hasMovable) plotCmd += ", ";
+                }
+                if (hasMovable) {
+                    plotCmd += "'-' w p ls 2 title 'Movable'";
+                }
+                plotCmd += ", '-' w l ls 3 title 'Boundary'";
+                cellfile << plotCmd << endl;
 
-                // // Plot fixed modules if they exist
-                // if (hasFixed) {
-                //     for (size_t j = 0; j < t.size(); ++j) {
-                //         if (_placement.module(j).isFixed()) {
-                //             cellfile << t[j].x << " " << t[j].y << endl;
-                //         }
-                //     }
-                //     cellfile << "e" << endl;
-                // }
+                // Plot fixed modules if they exist
+                if (hasFixed) {
+                    for (size_t j = 0; j < t.size(); ++j) {
+                        if (_placement.module(j).isFixed()) {
+                            cellfile << t[j].x << " " << t[j].y << endl;
+                        }
+                    }
+                    cellfile << "e" << endl;
+                }
 
-                // // Plot movable modules if they exist
-                // if (hasMovable) {
-                //     for (size_t j = 0; j < t.size(); ++j) {
-                //         if (!_placement.module(j).isFixed()) {
-                //             cellfile << t[j].x << " " << t[j].y << endl;
-                //         }
-                //     }
-                //     cellfile << "e" << endl;
-                // }
+                // Plot movable modules if they exist
+                if (hasMovable) {
+                    for (size_t j = 0; j < t.size(); ++j) {
+                        if (!_placement.module(j).isFixed()) {
+                            cellfile << t[j].x << " " << t[j].y << endl;
+                        }
+                    }
+                    cellfile << "e" << endl;
+                }
 
-                // // Always plot boundary
-                // plotBoxPLT(cellfile, _placement.boundryLeft(), _placement.boundryBottom(), 
-                //         _placement.boundryRight(), _placement.boundryTop());
-                // cellfile << "e" << endl;
-                // cellfile.close();
+                // Always plot boundary
+                plotBoxPLT(cellfile, _placement.boundryLeft(), _placement.boundryBottom(), 
+                        _placement.boundryRight(), _placement.boundryTop());
+                cellfile << "e" << endl;
+                cellfile.close();
 
-                // // Execute gnuplot
-                // char cmd[256];
-                // sprintf(cmd, "gnuplot %s %s", densityname.c_str(), cellname.c_str());
-                // system(cmd);
+                // Execute gnuplot
+                char cmd[256];
+                sprintf(cmd, "gnuplot %s %s", densityname.c_str(), cellname.c_str());
+                system(cmd);
 
-                // // Combine the two plots side by side
-                // sprintf(cmd, "convert +append %s %s plot_output/combined_%zu.png", 
-                //         densitypng.c_str(), cellpng.c_str(), i);
-                // system(cmd);
+                // Combine the two plots side by side
+                sprintf(cmd, "convert +append %s %s plot_output/combined_%zu.png", 
+                        densitypng.c_str(), cellpng.c_str(), i);
+                system(cmd);
 
-                // printf("Generated plots for iteration %zu\n", i);
+                printf("Generated plots for iteration %zu\n", i);
                 /////////////////////////////////////////////////////////////////////////////////////////////
             }
 
