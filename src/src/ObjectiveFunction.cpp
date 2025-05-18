@@ -569,6 +569,36 @@ const std::vector<Point2<double>> &Density::Backward() {
 //         }
 //     }
 
+
+//     vector<vector<pair<double, double>>> grad_map_norm(bin_rows_, vector<pair<double, double>>(bin_cols_));
+
+//     double px_min = numeric_limits<double>::max();
+//     double px_max = numeric_limits<double>::lowest();
+//     double py_min = numeric_limits<double>::max();
+//     double py_max = numeric_limits<double>::lowest();
+//     double epsilon = 1e-8;
+
+//     for (int by = 0; by < bin_rows_; ++by) {
+//         for (int bx = 0; bx < bin_cols_; ++bx) {
+//             double val1 = grad_map[by][bx].first;
+//             double val2 = grad_map[by][bx].second;
+//             px_min = min(px_min, val1);
+//             px_max = max(px_max, val1);
+//             py_min = min(py_min, val1);
+//             py_max = max(py_max, val1);
+//         }
+//     }
+//     double rangex = max(px_max - px_min, epsilon);
+//     double rangey = max(py_max - py_min, epsilon);
+    
+
+//     for (int by = 0; by < bin_rows_; ++by)
+//         for (int bx = 0; bx < bin_cols_; ++bx)
+//         {
+//             grad_map_norm[by][bx].first = (grad_map[by][bx].first - px_min) / rangex;
+//             grad_map_norm[by][bx].second = (grad_map[by][bx].second - py_min) / rangey;
+
+//         }
     
 //     for (size_t i = 0; i < num_modules; ++i) {
 //         Module &mod = placement_.module(i);
@@ -605,8 +635,8 @@ const std::vector<Point2<double>> &Density::Backward() {
 
 //                 double weight = wx * wy;
 
-//                 grad_[i].x += weight * grad_map[by][bx].first * area;
-//                 grad_[i].y += weight * grad_map[by][bx].second * area;
+//                 grad_[i].x += weight * grad_map_norm[by][bx].first * area;
+//                 grad_[i].y += weight * grad_map_norm[by][bx].second * area;
 //             }
 //         }
 //     }

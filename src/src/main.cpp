@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         ////////////start to edit your code /////////////
 		
 		GlobalPlacer globalPlacer(placement);
-		globalPlacer.place();
+		globalPlacer.place(0);
 		globalPlacer.plotPlacementResult( "init.plt" );
 
 		/////////////////////////////////////////////////
@@ -130,7 +130,15 @@ int main(int argc, char *argv[])
         if(bLegal)
             cout<<"legalization success!"<<endl;
         else
-            cout<<"legalization fail!"<<endl;
+        {
+            cout<<"legalization fail! Try random global placement. "<<endl;
+            GlobalPlacer replace(placement);
+            replace.place(1);
+            placement.outputBookshelfFormat(placement.name()+".gp.pl");
+            orig_wirelength = placement.computeHpwl();
+            CTetrisLegal re_legal(placement);
+            bLegal = legal.Solve(0.8);
+        }
 
 
         placement.outputBookshelfFormat(placement.name()+".lg.pl");

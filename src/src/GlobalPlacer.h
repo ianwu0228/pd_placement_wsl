@@ -11,7 +11,7 @@ class GlobalPlacer
 {
 public:
     GlobalPlacer(Placement &placement);
-	void place();
+	void place(bool rand_place);
     void plotPlacementResult( const string outfilename, bool isPrompt = false );
 
 private:
